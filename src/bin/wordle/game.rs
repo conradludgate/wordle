@@ -12,6 +12,7 @@ use color_eyre::{
     Result,
 };
 use termion::{
+    cursor,
     event::Key,
     input::{MouseTerminal, TermRead},
     raw::{IntoRawMode, RawTerminal},
@@ -37,10 +38,32 @@ impl Display for GameType {
 }
 
 pub struct Game {
-    solution: String,
-    guesses: Vec<String>,
+    state: State,
     game_type: GameType,
     terminal: MouseTerminal<RawTerminal<Stdout>>,
+}
+
+pub struct State {
+    solution: String,
+    guesses: Vec<String>,
+}
+
+impl Display for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for input in &self.guesses {
+            let matches = wordle::diff(&*input, &*self.solution);
+            for (m, c) in matches.0.into_iter().zip(input.chars()) {
+                let c = c.to_ascii_uppercase();
+                match m {
+                    Match::Green => write!(f, "{}", c.fg::<Black>().bg::<Green>())?,
+                    Match::Amber => write!(f, "{}", c.fg::<Black>().bg::<Yellow>())?,
+                    Match::Black => write!(f, "{}", c)?,
+                };
+            }
+            write!(f, "{}{}", cursor::Down(1), cursor::Left(5))?;
+        }
+        Ok(())
+    }
 }
 
 impl Game {
@@ -72,8 +95,10 @@ impl Game {
         );
 
         Ok(Self {
-            solution,
-            guesses: Vec::with_capacity(6),
+            state: State {
+                solution,
+                guesses: Vec::with_capacity(6),
+            },
             game_type,
             terminal: MouseTerminal::from(
                 stdout()
@@ -101,14 +126,14 @@ impl Game {
                 }
                 Key::Char('\n') if word.len() == 5 => {
                     if wordle::valid(&word) {
-                        self.guesses.push(word.clone());
+                        self.state.guesses.push(word.clone());
                         self.draw_valid()?;
 
-                        if word == self.solution {
+                        if word == self.state.solution {
                             let score =
-                                std::char::from_digit(self.guesses.len() as u32, 10).unwrap();
+                                std::char::from_digit(self.state.guesses.len() as u32, 10).unwrap();
                             return Ok(Some(self.share(score)?));
-                        } else if self.guesses.len() >= 6 {
+                        } else if self.state.guesses.len() >= 6 {
                             self.draw_final_solution()?;
 
                             return Ok(Some(self.share('X')?));
@@ -121,11 +146,7 @@ impl Game {
                 }
                 Key::Backspace => {
                     word.pop();
-                    write!(
-                        self.terminal,
-                        "{back} {back}",
-                        back = termion::cursor::Left(1)
-                    )?;
+                    write!(self.terminal, "{back} {back}", back = cursor::Left(1))?;
                 }
                 _ => {}
             }
@@ -136,14 +157,15 @@ impl Game {
     }
 
     fn share(mut self, score: char) -> Result<GameShare> {
-        write!(self.terminal, "{}", termion::cursor::Down(1))?;
+        write!(self.terminal, "{}", cursor::Down(1))?;
 
         Ok(GameShare {
             game_type: self.game_type,
             matches: self
+                .state
                 .guesses
                 .into_iter()
-                .map(|input| wordle::diff(&*input, &*self.solution))
+                .map(|input| wordle::diff(&*input, &*self.state.solution))
                 .collect(),
             score,
         })
@@ -161,40 +183,24 @@ impl Game {
 
     fn draw_valid(&mut self) -> Result<()> {
         self.draw_window()?;
-        for i in 0..self.guesses.len() {
-            self.draw_guess(i)?;
-        }
+        write!(self.terminal, "{}", self.state)?;
         Ok(())
     }
 
     fn draw_final_solution(&mut self) -> Result<()> {
-        write!(self.terminal, "{}", termion::cursor::Down(1))?;
+        write!(self.terminal, "{}", cursor::Down(1))?;
 
         write!(
             self.terminal,
             "{}",
-            self.solution
+            self.state
+                .solution
                 .to_ascii_uppercase()
                 .fg::<Black>()
                 .bg::<LightGreen>()
         )?;
 
-        write!(self.terminal, "{}", termion::cursor::Goto(1, 11))?;
-        Ok(())
-    }
-
-    fn draw_guess(&mut self, i: usize) -> Result<()> {
-        let input = &*self.guesses[i];
-        let matches = wordle::diff(input, &*self.solution);
-        for (m, c) in matches.0.into_iter().zip(input.chars()) {
-            let c = c.to_ascii_uppercase();
-            match m {
-                Match::Green => write!(self.terminal, "{}", c.fg::<Black>().bg::<Green>())?,
-                Match::Amber => write!(self.terminal, "{}", c.fg::<Black>().bg::<Yellow>())?,
-                Match::Black => write!(self.terminal, "{}", c)?,
-            };
-        }
-        write!(self.terminal, "{}", termion::cursor::Goto(1, 4 + i as u16))?;
+        write!(self.terminal, "{}", cursor::Goto(1, 11))?;
         Ok(())
     }
 
@@ -205,14 +211,14 @@ impl Game {
             self.terminal,
             "{clear_all}{bottom_left}Press ESC to exit.",
             clear_all = termion::clear::All,
-            bottom_left = termion::cursor::Goto(1, height),
+            bottom_left = cursor::Goto(1, height),
         )?;
         write!(
             self.terminal,
             "{top_left}Wordle {game_type}{down}",
-            top_left = termion::cursor::Goto(1, 1),
+            top_left = cursor::Goto(1, 1),
             game_type = self.game_type,
-            down = termion::cursor::Goto(1, 3),
+            down = cursor::Goto(1, 3),
         )?;
         self.terminal.flush()?;
 
