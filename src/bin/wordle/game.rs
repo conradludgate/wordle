@@ -6,7 +6,7 @@ use std::{
 use color_eyre::{
     eyre::{ensure, Context},
     owo_colors::{
-        colors::{css::LightGreen, Black, Green, Red, Yellow},
+        colors::{xterm::Gray, Black, Green, Red, Yellow},
         OwoColorize,
     },
     Result,
@@ -45,6 +45,7 @@ pub struct Game {
 pub struct GameBase {
     state: State,
     game_type: GameType,
+    keyboard: Keyboard,
 }
 
 impl Display for GameBase {
@@ -53,20 +54,33 @@ impl Display for GameBase {
 
         write!(
             f,
-            "{clear_all}{bottom_left}Press ESC to exit.",
+            "{clear_all}{bottom_left}Press ESC to exit.{top_left}Wordle {game_type}{down}{keyboard}{state}",
             clear_all = termion::clear::All,
             bottom_left = cursor::Goto(1, height),
-        )?;
-        write!(
-            f,
-            "{top_left}Wordle {game_type}{down}",
             top_left = cursor::Goto(1, 1),
             game_type = self.game_type,
             down = cursor::Goto(1, 3),
+            keyboard = self.keyboard,
+            state = self.state
         )?;
-        write!(f, "{}", self.state)?;
 
         Ok(())
+    }
+}
+
+impl GameBase {
+    pub fn push(&mut self, word: &str) {
+        self.state.guesses.push(word.to_owned());
+        let matches = wordle::diff(word, &self.state.solution);
+        for (b, m) in word.bytes().zip(matches.0) {
+            let b = (b - b'a') as usize;
+            let m2 = &mut self.keyboard.0[b];
+            *m2 = Some(match (m, *m2) {
+                (_, Some(Match::Green)) | (Match::Green, _) => Match::Green,
+                (_, Some(Match::Amber)) | (Match::Amber, _) => Match::Amber,
+                (_, Some(Match::Black)) | (Match::Black, _) => Match::Black,
+            });
+        }
     }
 }
 
@@ -89,6 +103,46 @@ impl Display for State {
             }
             write!(f, "{}{}", cursor::Down(1), cursor::Left(5))?;
         }
+        Ok(())
+    }
+}
+
+pub struct Keyboard([Option<Match>; 26]);
+
+impl Display for Keyboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{save}{start}",
+            save = cursor::Save,
+            start = cursor::Goto(15, 3)
+        )?;
+
+        const LAYOUT: &[&str] = &["ABCDEFG", "HIJKLMO", "OPQRSTU", " VWXYZ"];
+
+        for (i, layout) in LAYOUT.iter().enumerate() {
+            for (mut j, b) in layout.bytes().enumerate() {
+                if i == 3 && j > 0 {
+                    j -= 1;
+                }
+                let c = b as char;
+                match self.0[i * 7 + j] {
+                    Some(Match::Green) => write!(f, "{}", c.fg::<Black>().bg::<Green>())?,
+                    Some(Match::Amber) => write!(f, "{}", c.fg::<Black>().bg::<Yellow>())?,
+                    Some(Match::Black) => write!(f, "{}", c.fg::<Gray>())?,
+                    None => write!(f, "{}", c)?,
+                }
+            }
+            write!(
+                f,
+                "{down}{left}",
+                down = cursor::Down(1),
+                left = cursor::Left(7)
+            )?;
+        }
+
+        write!(f, "{restore}", restore = cursor::Restore,)?;
+
         Ok(())
     }
 }
@@ -128,6 +182,7 @@ impl Game {
                     guesses: Vec::with_capacity(6),
                 },
                 game_type,
+                keyboard: Keyboard([None; 26]),
             },
             terminal: MouseTerminal::from(
                 stdout()
@@ -139,6 +194,7 @@ impl Game {
 
     pub fn start(mut self) -> Result<Option<GameShare>> {
         self.draw_window()?;
+        self.terminal.flush()?;
 
         let mut word = String::with_capacity(5);
 
@@ -155,7 +211,7 @@ impl Game {
                 }
                 Key::Char('\n') if word.len() == 5 => {
                     if wordle::valid(&word) {
-                        self.base.state.guesses.push(word.clone());
+                        self.base.push(&word);
                         self.draw_window()?;
 
                         if word == self.base.state.solution {
@@ -176,14 +232,14 @@ impl Game {
                 }
                 _ => {}
             }
-            self.terminal.flush().unwrap();
+            self.terminal.flush()?;
         }
 
         Ok(None)
     }
 
     fn share(mut self) -> Result<GameShare> {
-        write!(self.terminal, "{}", cursor::Down(1))?;
+        write!(self.terminal, "{}", cursor::Goto(1, 12))?;
         Ok(GameShare(self.base))
     }
 
@@ -208,7 +264,7 @@ impl Game {
                 .solution
                 .to_ascii_uppercase()
                 .fg::<Black>()
-                .bg::<LightGreen>()
+                .bg::<Green>()
         )?;
 
         write!(self.terminal, "{}", cursor::Goto(1, 11))?;
@@ -217,7 +273,6 @@ impl Game {
 
     fn draw_window(&mut self) -> Result<()> {
         write!(self.terminal, "{}", self.base)?;
-        self.terminal.flush()?;
         Ok(())
     }
 }
@@ -226,7 +281,11 @@ pub struct GameShare(GameBase);
 
 impl Display for GameShare {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let GameBase { state, game_type } = &self.0;
+        let GameBase {
+            keyboard: _,
+            state,
+            game_type,
+        } = &self.0;
         let n = state.guesses.len();
         let score = if n < 6 || state.guesses[5] == state.solution {
             std::char::from_digit(n as u32, 10).ok_or(std::fmt::Error)?
