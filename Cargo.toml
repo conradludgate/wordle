@@ -2,6 +2,9 @@
 name = "cl-wordle"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Wordle in your terminal"
+repository = "https://github.com/conradludgate/wordle"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
