@@ -38,9 +38,36 @@ impl Display for GameType {
 }
 
 pub struct Game {
+    base: GameBase,
+    terminal: MouseTerminal<RawTerminal<Stdout>>,
+}
+
+pub struct GameBase {
     state: State,
     game_type: GameType,
-    terminal: MouseTerminal<RawTerminal<Stdout>>,
+}
+
+impl Display for GameBase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (_width, height) = terminal_size().map_err(|_| std::fmt::Error)?;
+
+        write!(
+            f,
+            "{clear_all}{bottom_left}Press ESC to exit.",
+            clear_all = termion::clear::All,
+            bottom_left = cursor::Goto(1, height),
+        )?;
+        write!(
+            f,
+            "{top_left}Wordle {game_type}{down}",
+            top_left = cursor::Goto(1, 1),
+            game_type = self.game_type,
+            down = cursor::Goto(1, 3),
+        )?;
+        write!(f, "{}", self.state)?;
+
+        Ok(())
+    }
 }
 
 pub struct State {
@@ -95,11 +122,13 @@ impl Game {
         );
 
         Ok(Self {
-            state: State {
-                solution,
-                guesses: Vec::with_capacity(6),
+            base: GameBase {
+                state: State {
+                    solution,
+                    guesses: Vec::with_capacity(6),
+                },
+                game_type,
             },
-            game_type,
             terminal: MouseTerminal::from(
                 stdout()
                     .into_raw_mode()
@@ -111,7 +140,7 @@ impl Game {
     pub fn start(mut self) -> Result<Option<GameShare>> {
         self.draw_window()?;
 
-        let mut word = String::new();
+        let mut word = String::with_capacity(5);
 
         let stdin = stdin();
 
@@ -119,24 +148,21 @@ impl Game {
             let evt = c?;
             match evt {
                 Key::Esc => return Ok(None),
-                Key::Char(c) if c.is_ascii() && word.len() < 5 => {
+                Key::Char(c) if c.is_ascii_alphabetic() && word.len() < 5 => {
                     let c = c.to_ascii_lowercase();
                     write!(self.terminal, "{}", c.to_ascii_uppercase())?;
                     word.push(c);
                 }
                 Key::Char('\n') if word.len() == 5 => {
                     if wordle::valid(&word) {
-                        self.state.guesses.push(word.clone());
-                        self.draw_valid()?;
+                        self.base.state.guesses.push(word.clone());
+                        self.draw_window()?;
 
-                        if word == self.state.solution {
-                            let score =
-                                std::char::from_digit(self.state.guesses.len() as u32, 10).unwrap();
-                            return Ok(Some(self.share(score)?));
-                        } else if self.state.guesses.len() >= 6 {
+                        if word == self.base.state.solution {
+                            return Ok(Some(self.share()?));
+                        } else if self.base.state.guesses.len() >= 6 {
                             self.draw_final_solution()?;
-
-                            return Ok(Some(self.share('X')?));
+                            return Ok(Some(self.share()?));
                         }
 
                         word.clear();
@@ -156,34 +182,18 @@ impl Game {
         Ok(None)
     }
 
-    fn share(mut self, score: char) -> Result<GameShare> {
+    fn share(mut self) -> Result<GameShare> {
         write!(self.terminal, "{}", cursor::Down(1))?;
-
-        Ok(GameShare {
-            game_type: self.game_type,
-            matches: self
-                .state
-                .guesses
-                .into_iter()
-                .map(|input| wordle::diff(&*input, &*self.state.solution))
-                .collect(),
-            score,
-        })
+        Ok(GameShare(self.base))
     }
 
     fn draw_invalid(&mut self, invalid: &str) -> Result<()> {
-        self.draw_valid()?;
+        self.draw_window()?;
         write!(
             self.terminal,
             "{}",
             invalid.to_ascii_uppercase().bg::<Red>()
         )?;
-        Ok(())
-    }
-
-    fn draw_valid(&mut self) -> Result<()> {
-        self.draw_window()?;
-        write!(self.terminal, "{}", self.state)?;
         Ok(())
     }
 
@@ -193,7 +203,8 @@ impl Game {
         write!(
             self.terminal,
             "{}",
-            self.state
+            self.base
+                .state
                 .solution
                 .to_ascii_uppercase()
                 .fg::<Black>()
@@ -205,43 +216,27 @@ impl Game {
     }
 
     fn draw_window(&mut self) -> Result<()> {
-        let (_width, height) = terminal_size()?;
-
-        write!(
-            self.terminal,
-            "{clear_all}{bottom_left}Press ESC to exit.",
-            clear_all = termion::clear::All,
-            bottom_left = cursor::Goto(1, height),
-        )?;
-        write!(
-            self.terminal,
-            "{top_left}Wordle {game_type}{down}",
-            top_left = cursor::Goto(1, 1),
-            game_type = self.game_type,
-            down = cursor::Goto(1, 3),
-        )?;
+        write!(self.terminal, "{}", self.base)?;
         self.terminal.flush()?;
-
         Ok(())
     }
 }
 
-pub struct GameShare {
-    game_type: GameType,
-    matches: Vec<wordle::Matches>,
-    score: char,
-}
+pub struct GameShare(GameBase);
 
 impl Display for GameShare {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Wordle {game_type} {score}/6",
-            game_type = self.game_type,
-            score = self.score
-        )?;
-        for m in &self.matches {
-            write!(f, "\n{m}")?;
+        let GameBase { state, game_type } = &self.0;
+        let n = state.guesses.len();
+        let score = if n < 6 || state.guesses[5] == state.solution {
+            std::char::from_digit(n as u32, 10).ok_or(std::fmt::Error)?
+        } else {
+            'X'
+        };
+
+        write!(f, "Wordle {game_type} {score}/6",)?;
+        for input in &state.guesses {
+            write!(f, "\n{}", wordle::diff(&*input, &*state.solution))?;
         }
         Ok(())
     }
