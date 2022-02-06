@@ -1,5 +1,5 @@
 [package]
-name = "wordle"
+name = "cl-wordle"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,3 +9,6 @@ edition = "2021"
 time = { version = "0.3", features = ["local-offset", "macros"] }
 color-eyre = "0.6"
 termion = "1.5"
+
+[[bin]]
+name = "wordle"

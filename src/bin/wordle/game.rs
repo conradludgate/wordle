@@ -18,10 +18,7 @@ use termion::{
     terminal_size,
 };
 
-use crate::{
-    logic::{self, Matches},
-    words,
-};
+use cl_wordle as wordle;
 
 #[derive(Clone, Copy, Debug)]
 enum GameType {
@@ -57,12 +54,12 @@ impl Game {
     }
 
     pub fn from_date(date: time::Date) -> Result<Self> {
-        let day = logic::get_day(date);
+        let day = wordle::get_day(date);
         Self::from_day(day)
     }
 
     pub fn from_day(day: usize) -> Result<Self> {
-        let solution = logic::get_solution(day).to_owned();
+        let solution = wordle::get_solution(day).to_owned();
         Self::new_raw(solution, GameType::Daily(day))
     }
 
@@ -92,9 +89,7 @@ impl Game {
                     word.push(c);
                 }
                 Key::Char('\n') if word.len() == 5 => {
-                    if !words::ACCEPT.contains(&&*word) && !words::FINAL.contains(&&*word) {
-                        self.draw_invalid(&word)?;
-                    } else {
+                    if wordle::valid(&word) {
                         self.guesses.push(word.clone());
                         self.draw_valid()?;
 
@@ -107,6 +102,8 @@ impl Game {
                         }
 
                         word.clear();
+                    } else {
+                        self.draw_invalid(&word)?;
                     }
                 }
                 Key::Backspace => {
@@ -133,7 +130,7 @@ impl Game {
             matches: self
                 .guesses
                 .into_iter()
-                .map(|input| logic::diff(&*input, &*self.solution))
+                .map(|input| wordle::diff(&*input, &*self.solution))
                 .collect::<Result<_>>()?,
             score,
         })
@@ -159,13 +156,15 @@ impl Game {
 
     fn draw_guess(&mut self, i: usize) -> Result<()> {
         let input = &*self.guesses[i];
-        let matches = logic::diff(input, &*self.solution)?;
+        let matches = wordle::diff(input, &*self.solution)?;
         for (m, c) in matches.0.into_iter().zip(input.chars()) {
             let c = c.to_ascii_uppercase();
             match m {
-                logic::Match::Green => write!(self.terminal, "{}", c.fg::<Black>().bg::<Green>())?,
-                logic::Match::Amber => write!(self.terminal, "{}", c.fg::<Black>().bg::<Yellow>())?,
-                logic::Match::Black => write!(self.terminal, "{}", c)?,
+                wordle::Match::Green => write!(self.terminal, "{}", c.fg::<Black>().bg::<Green>())?,
+                wordle::Match::Amber => {
+                    write!(self.terminal, "{}", c.fg::<Black>().bg::<Yellow>())?
+                }
+                wordle::Match::Black => write!(self.terminal, "{}", c)?,
             };
         }
         write!(self.terminal, "{}", termion::cursor::Goto(1, 4 + i as u16))?;
@@ -177,9 +176,13 @@ impl Game {
 
         write!(
             self.terminal,
-            "{clear_all}{bottom_left}Press ESC to exit.{top_left}Wordle {game_type}{down}",
+            "{clear_all}{bottom_left}Press ESC to exit.",
             clear_all = termion::clear::All,
             bottom_left = termion::cursor::Goto(1, height),
+        )?;
+        write!(
+            self.terminal,
+            "{top_left}Wordle {game_type}{down}",
             top_left = termion::cursor::Goto(1, 1),
             game_type = self.game_type,
             down = termion::cursor::Goto(1, 3),
@@ -192,7 +195,7 @@ impl Game {
 
 pub struct GameShare {
     game_type: GameType,
-    matches: Vec<Matches>,
+    matches: Vec<wordle::Matches>,
     score: char,
 }
 

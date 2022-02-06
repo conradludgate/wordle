@@ -1,6 +1,4 @@
 mod game;
-mod logic;
-mod words;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;

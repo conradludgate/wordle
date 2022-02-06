@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use color_eyre::{eyre::ensure, Result};
 
-use crate::words;
+pub mod words;
 
 pub fn get_solution(day: usize) -> &'static str {
     words::FINAL[day % words::FINAL.len()]
@@ -10,6 +10,10 @@ pub fn get_solution(day: usize) -> &'static str {
 
 pub fn get_day(date: time::Date) -> usize {
     (date.to_julian_day() - words::FIRST_DAY.to_julian_day()) as usize
+}
+
+pub fn valid(word: &str) -> bool {
+    words::ACCEPT.contains(&word) || words::FINAL.contains(&word)
 }
 
 #[derive(Clone, Copy, Debug)]
