@@ -122,6 +122,10 @@ impl Display for Keyboard {
 
         for (i, layout) in LAYOUT.iter().enumerate() {
             for (mut j, b) in layout.bytes().enumerate() {
+                if i == 3 && j == 0 {
+                    write!(f, " ")?;
+                    continue;
+                }
                 if i == 3 && j > 0 {
                     j -= 1;
                 }
