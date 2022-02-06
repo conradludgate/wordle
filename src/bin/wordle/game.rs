@@ -4,9 +4,9 @@ use std::{
 };
 
 use color_eyre::{
-    eyre::Context,
+    eyre::{ensure, Context},
     owo_colors::{
-        colors::{Black, Green, Red, Yellow},
+        colors::{css::LightGreen, Black, Green, Red, Yellow},
         OwoColorize,
     },
     Result,
@@ -19,6 +19,7 @@ use termion::{
 };
 
 use cl_wordle as wordle;
+use wordle::Match;
 
 #[derive(Clone, Copy, Debug)]
 enum GameType {
@@ -44,8 +45,8 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Result<Self> {
-        let now = time::OffsetDateTime::now_local()
-            .with_context(|| "could not determine local timezone")?;
+        let now =
+            time::OffsetDateTime::now_local().wrap_err("could not determine local timezone")?;
         Self::from_date(now.date())
     }
 
@@ -64,11 +65,21 @@ impl Game {
     }
 
     fn new_raw(solution: String, game_type: GameType) -> Result<Self> {
+        ensure!(
+            wordle::words::FINAL.contains(&&*solution),
+            "{} is not a valid solution",
+            solution
+        );
+
         Ok(Self {
             solution,
             guesses: Vec::with_capacity(6),
             game_type,
-            terminal: MouseTerminal::from(stdout().into_raw_mode()?),
+            terminal: MouseTerminal::from(
+                stdout()
+                    .into_raw_mode()
+                    .wrap_err("could not get handle on a TTY")?,
+            ),
         })
     }
 
@@ -98,6 +109,8 @@ impl Game {
                                 std::char::from_digit(self.guesses.len() as u32, 10).unwrap();
                             return Ok(Some(self.share(score)?));
                         } else if self.guesses.len() >= 6 {
+                            self.draw_final_solution()?;
+
                             return Ok(Some(self.share('X')?));
                         }
 
@@ -154,17 +167,31 @@ impl Game {
         Ok(())
     }
 
+    fn draw_final_solution(&mut self) -> Result<()> {
+        write!(self.terminal, "{}", termion::cursor::Down(1))?;
+
+        write!(
+            self.terminal,
+            "{}",
+            self.solution
+                .to_ascii_uppercase()
+                .fg::<Black>()
+                .bg::<LightGreen>()
+        )?;
+
+        write!(self.terminal, "{}", termion::cursor::Goto(1, 11))?;
+        Ok(())
+    }
+
     fn draw_guess(&mut self, i: usize) -> Result<()> {
         let input = &*self.guesses[i];
         let matches = wordle::diff(input, &*self.solution);
         for (m, c) in matches.0.into_iter().zip(input.chars()) {
             let c = c.to_ascii_uppercase();
             match m {
-                wordle::Match::Green => write!(self.terminal, "{}", c.fg::<Black>().bg::<Green>())?,
-                wordle::Match::Amber => {
-                    write!(self.terminal, "{}", c.fg::<Black>().bg::<Yellow>())?
-                }
-                wordle::Match::Black => write!(self.terminal, "{}", c)?,
+                Match::Green => write!(self.terminal, "{}", c.fg::<Black>().bg::<Green>())?,
+                Match::Amber => write!(self.terminal, "{}", c.fg::<Black>().bg::<Yellow>())?,
+                Match::Black => write!(self.terminal, "{}", c)?,
             };
         }
         write!(self.terminal, "{}", termion::cursor::Goto(1, 4 + i as u16))?;

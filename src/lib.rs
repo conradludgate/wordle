@@ -14,7 +14,7 @@ pub fn valid(word: &str) -> bool {
     words::ACCEPT.contains(&word) || words::FINAL.contains(&word)
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Match {
     Green,
     Amber,
@@ -66,8 +66,11 @@ pub fn diff(input: &str, solution: &str) -> Matches {
 
     // now, find amber matches
     for (i, &b) in input.iter().enumerate() {
-        if let Some(index) = solution.iter().position(|&x| x == b) {
-            solution[index] = 0; // letters only match once
+        if diff[i] != Match::Black {
+            continue;
+        }
+        if let Some(j) = solution.iter().position(|&x| x == b) {
+            solution[j] = 0; // letters only match once
             diff[i] = Match::Amber;
         }
     }
