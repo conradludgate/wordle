@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-use color_eyre::{eyre::ensure, Result};
-
 pub mod words;
 
 pub fn get_solution(day: usize) -> &'static str {
@@ -44,31 +42,35 @@ impl Display for Matches {
     }
 }
 
-pub fn diff(input: &str, solution: &str) -> Result<Matches> {
-    ensure!(
+pub fn diff(input: &str, solution: &str) -> Matches {
+    assert!(
         input.is_ascii(),
         "input guess should only be 5 ascii letters"
     );
-    ensure!(
-        input.len() == 5,
-        "input guess should only be 5 ascii letters"
-    );
-
+    assert_eq!(input.len(), 5, "input guess should only be 5 ascii letters");
     debug_assert!(solution.is_ascii());
     debug_assert_eq!(solution.len(), 5);
 
     let input = input.as_bytes();
-    let solution = solution.as_bytes();
+    let mut solution = solution.as_bytes().to_owned();
 
     let mut diff = [Match::Black; 5];
 
+    // find exact matches first
     for (i, &b) in input.iter().enumerate() {
         if solution[i] == b {
+            solution[i] = 0; // letters only match once
             diff[i] = Match::Green;
-        } else if solution.contains(&b) {
+        }
+    }
+
+    // now, find amber matches
+    for (i, &b) in input.iter().enumerate() {
+        if let Some(index) = solution.iter().position(|&x| x == b) {
+            solution[index] = 0; // letters only match once
             diff[i] = Match::Amber;
         }
     }
 
-    Ok(Matches(diff))
+    Matches(diff)
 }

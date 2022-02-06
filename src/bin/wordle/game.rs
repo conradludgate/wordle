@@ -131,7 +131,7 @@ impl Game {
                 .guesses
                 .into_iter()
                 .map(|input| wordle::diff(&*input, &*self.solution))
-                .collect::<Result<_>>()?,
+                .collect(),
             score,
         })
     }
@@ -156,7 +156,7 @@ impl Game {
 
     fn draw_guess(&mut self, i: usize) -> Result<()> {
         let input = &*self.guesses[i];
-        let matches = wordle::diff(input, &*self.solution)?;
+        let matches = wordle::diff(input, &*self.solution);
         for (m, c) in matches.0.into_iter().zip(input.chars()) {
             let c = c.to_ascii_uppercase();
             match m {
