@@ -1,6 +1,6 @@
 use std::{fmt, fmt::Display, io};
 
-use color_eyre::{eyre::{ensure, Context}, Result};
+use eyre::{ensure, Context, Result};
 use termion::{cursor, terminal_size};
 
 use super::{keyboard::Keyboard, state::State};
@@ -52,7 +52,7 @@ impl Game {
         Self::new_raw(solution, GameType::Daily(day))
     }
 
-    fn new_raw(solution: String, game_type: GameType) -> color_eyre::Result<Self> {
+    fn new_raw(solution: String, game_type: GameType) -> Result<Self> {
         ensure!(
             cl_wordle::words::FINAL.contains(&&*solution),
             "{} is not a valid solution",
@@ -75,7 +75,7 @@ impl Game {
     }
 
     pub fn write_final_solution(&self, w: impl io::Write) -> io::Result<()> {
-        self.state.draw_final_solution(w)
+        self.state.write_final_solution(w)
     }
 
     pub fn display_share_card(&self, mut f: impl fmt::Write) -> fmt::Result {

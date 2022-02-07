@@ -12,9 +12,7 @@ use controller::GameController;
 use game::Game;
 use rand::Rng;
 
-fn main() -> color_eyre::Result<()> {
-    color_eyre::install()?;
-
+fn main() -> eyre::Result<()> {
     let app = App::parse();
     let game = match app.game_mode {
         None => Game::new()?,

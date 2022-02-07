@@ -4,11 +4,8 @@ use std::{
     io::{stdin, stdout, Stdout, Write},
 };
 
-use color_eyre::{
-    eyre::Context,
-    owo_colors::{colors::Red, OwoColorize},
-    Result,
-};
+use eyre::{Context, Result};
+use owo_colors::{colors::Red, OwoColorize};
 use termion::{
     cursor,
     event::Key,

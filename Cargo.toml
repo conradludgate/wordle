@@ -1,6 +1,6 @@
 [package]
 name = "cl-wordle"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 license = "MIT"
 description = "Wordle in your terminal"
@@ -10,7 +10,8 @@ repository = "https://github.com/conradludgate/wordle"
 
 [dependencies]
 time = { version = "0.3", features = ["local-offset", "macros"] }
-color-eyre = "0.6"
+eyre = "0.6"
+owo-colors = "3.2"
 termion = "1.5"
 clap = { version = "3.0", features = ["derive"] }
 rand = "0.8"

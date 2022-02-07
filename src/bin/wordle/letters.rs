@@ -1,7 +1,7 @@
 use std::{fmt};
 
 use cl_wordle::Match;
-use color_eyre::owo_colors::{
+use owo_colors::{
     colors::{Black, Green, Yellow, xterm::Gray},
     OwoColorize,
 };

@@ -34,7 +34,7 @@ impl State {
         }
     }
 
-    pub fn draw_final_solution(&self, mut w: impl io::Write) -> io::Result<()> {
+    pub fn write_final_solution(&self, mut w: impl io::Write) -> io::Result<()> {
         write!(w, "{}", cursor::Down(1))?;
         write!(w, "{}", WordMatch(&self.solution, Match::Exact))?;
         write!(w, "{}", cursor::Goto(1, 11))
