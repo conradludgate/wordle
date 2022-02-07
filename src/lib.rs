@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 pub mod words;
+pub mod state;
 
 /// Gets the solution word for the given day
 pub fn get_solution(day: usize) -> &'static str {
@@ -8,6 +9,7 @@ pub fn get_solution(day: usize) -> &'static str {
 }
 
 /// Gets the current day number from the given date
+#[cfg(feature = "time")]
 pub fn get_day(date: time::Date) -> usize {
     (date.to_julian_day() - words::FIRST_DAY.to_julian_day()) as usize
 }

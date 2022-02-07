@@ -11,8 +11,6 @@ use crossterm::{
 use eyre::Result;
 use owo_colors::{colors::Red, OwoColorize};
 
-use cl_wordle as wordle;
-
 use crate::{game::Game, terminal::Terminal};
 
 pub struct GameController {
@@ -43,20 +41,18 @@ impl GameController {
                         write!(self.stdout, "{}", c.to_ascii_uppercase())?;
                         word.push(c);
                     }
-                    KeyCode::Enter if word.len() == 5 => {
-                        if wordle::valid(&word) {
-                            self.game.push(&word);
+                    KeyCode::Enter if word.len() == 5 => match self.game.guess(&*word) {
+                        Ok(()) => {
                             self.display_window()?;
 
-                            if let Some(win) = self.game.finish() {
+                            if let Some(win) = self.game.over() {
                                 break win;
                             }
 
                             word.clear();
-                        } else {
-                            self.display_invalid(&word)?;
                         }
-                    }
+                        Err(_) => self.display_invalid(&word)?,
+                    },
                     KeyCode::Backspace => {
                         word.pop();
                         write!(self.stdout, "{back} {back}", back = cursor::MoveLeft(1))?;

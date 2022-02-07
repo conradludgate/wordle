@@ -1,12 +1,15 @@
 use std::{fmt, io};
 
+use cl_wordle::{state::{State, GuessError}, Match};
 use crossterm::{
     cursor,
     terminal::{self, Clear, ClearType},
 };
 use eyre::{ensure, Context, Result};
 
-use super::{keyboard::Keyboard, state::State};
+use crate::{guess::Guesses, letters::WordMatch};
+
+use super::keyboard::Keyboard;
 
 pub struct Game {
     state: State,
@@ -27,7 +30,7 @@ impl fmt::Display for Game {
             game_type = self.game_type,
             down = cursor::MoveTo(0, 2),
             keyboard = self.keyboard,
-            state = self.state
+            state = Guesses::from(&self.state),
         )?;
 
         Ok(())
@@ -68,17 +71,20 @@ impl Game {
         })
     }
 
-    pub fn push(&mut self, word: &str) {
-        let matches = self.state.push(word);
+    pub fn guess(&mut self, word: &str) -> Result<(), GuessError> {
+        let matches = self.state.guess(word)?;
         self.keyboard.push(word, matches);
+        Ok(())
     }
 
-    pub fn finish(&self) -> Option<bool> {
-        self.state.finish()
+    pub fn over(&self) -> Option<bool> {
+        self.state.game_over()
     }
 
-    pub fn write_final_solution(&self, w: impl io::Write) -> io::Result<()> {
-        self.state.write_final_solution(w)
+    pub fn write_final_solution(&self, mut w: impl io::Write) -> io::Result<()> {
+        write!(w, "{}", cursor::MoveDown(1))?;
+        write!(w, "{}", WordMatch(self.state.solution(), Match::Exact))?;
+        write!(w, "{}", cursor::MoveTo(0, 10))
     }
 
     pub fn display_share_card(&self, mut f: impl fmt::Write) -> fmt::Result {

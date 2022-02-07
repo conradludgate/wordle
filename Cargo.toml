@@ -10,15 +10,20 @@ repository = "https://github.com/conradludgate/wordle"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-time = { version = "0.3", features = ["local-offset", "macros"] }
-eyre = "0.6"
-owo-colors = "3.2"
-crossterm = "0.23"
-clap = { version = "3.0", features = ["derive"] }
-rand = "0.8"
+time = { version = "0.3", features = ["local-offset", "macros", "parsing"], optional = true }
+eyre = { version = "0.6", optional = true }
+owo-colors = { version = "3.2", optional = true }
+crossterm = { version = "0.23", optional = true }
+clap = { version = "3.0", features = ["derive"], optional = true }
+rand = { version = "0.8", optional = true }
 
 [dev-dependencies]
 test-case = "1.2.2"
 
+[features]
+default = ["tui", "time"]
+tui = ["time", "eyre", "owo-colors", "crossterm", "clap", "rand"]
+
 [[bin]]
 name = "wordle"
+required-features = ["tui"]

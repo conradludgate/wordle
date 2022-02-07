@@ -1,4 +1,5 @@
-pub const FIRST_DAY: time::Date = time::macros::date!(2021 - 06 - 19); //time::Date::from_calendar_date(2021, time::Month::June, 19);
+#[cfg(feature = "time")]
+pub const FIRST_DAY: time::Date = time::macros::date!(2021 - 06 - 19);
 
 /// List of words that can be the final guess value
 pub const FINAL: &[&str] = &[
