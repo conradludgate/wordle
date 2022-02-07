@@ -4,7 +4,7 @@ mod args;
 mod game;
 
 use args::{App, GameMode};
-use game::Game;
+use game::GameController;
 use rand::Rng;
 
 fn main() -> color_eyre::Result<()> {
@@ -12,10 +12,10 @@ fn main() -> color_eyre::Result<()> {
 
     let app = App::parse();
     let game = match app.game_mode {
-        None => Game::new()?,
-        Some(GameMode::Custom(custom)) => Game::custom(custom.word)?,
-        Some(GameMode::Day(day)) => Game::from_day(day.day)?,
-        Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen())?,
+        None => GameController::new()?,
+        Some(GameMode::Custom(custom)) => GameController::custom(custom.word)?,
+        Some(GameMode::Day(day)) => GameController::from_day(day.day)?,
+        Some(GameMode::Random) => GameController::from_day(rand::thread_rng().gen())?,
     };
 
     if let Some(share) = game.start()? {

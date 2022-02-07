@@ -20,7 +20,7 @@ use termion::{
 };
 
 use cl_wordle as wordle;
-use wordle::Match;
+use wordle::{Match, Matches};
 
 #[derive(Clone, Copy, Debug)]
 enum GameType {
@@ -37,18 +37,30 @@ impl Display for GameType {
     }
 }
 
-pub struct Game {
-    base: GameBase,
+pub struct LetterMatch(char, Match);
+impl Display for LetterMatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let c = self.0.to_ascii_uppercase();
+        match self.1 {
+            Match::Exact => write!(f, "{}", c.fg::<Black>().bg::<Green>()),
+            Match::Close => write!(f, "{}", c.fg::<Black>().bg::<Yellow>()),
+            Match::Wrong => write!(f, "{}", c.fg::<Gray>()),
+        }
+    }
+}
+
+pub struct GameController {
+    base: Game,
     terminal: MouseTerminal<RawTerminal<Stdout>>,
 }
 
-pub struct GameBase {
+pub struct Game {
     state: State,
     game_type: GameType,
     keyboard: Keyboard,
 }
 
-impl Display for GameBase {
+impl Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (_width, height) = terminal_size().map_err(|_| std::fmt::Error)?;
 
@@ -68,19 +80,11 @@ impl Display for GameBase {
     }
 }
 
-impl GameBase {
+impl Game {
     pub fn push(&mut self, word: &str) {
         self.state.guesses.push(word.to_owned());
         let matches = wordle::diff(word, &self.state.solution);
-        for (b, m) in word.bytes().zip(matches.0) {
-            let b = (b - b'a') as usize;
-            let m2 = &mut self.keyboard.0[b];
-            *m2 = Some(match (m, *m2) {
-                (_, Some(Match::Green)) | (Match::Green, _) => Match::Green,
-                (_, Some(Match::Amber)) | (Match::Amber, _) => Match::Amber,
-                (_, Some(Match::Black)) | (Match::Black, _) => Match::Black,
-            });
-        }
+        self.keyboard.push(word, matches);
     }
 }
 
@@ -94,12 +98,7 @@ impl Display for State {
         for input in &self.guesses {
             let matches = wordle::diff(&*input, &*self.solution);
             for (m, c) in matches.0.into_iter().zip(input.chars()) {
-                let c = c.to_ascii_uppercase();
-                match m {
-                    Match::Green => write!(f, "{}", c.fg::<Black>().bg::<Green>())?,
-                    Match::Amber => write!(f, "{}", c.fg::<Black>().bg::<Yellow>())?,
-                    Match::Black => write!(f, "{}", c)?,
-                };
+                write!(f, "{}", LetterMatch(c, m))?;
             }
             write!(f, "{}{}", cursor::Down(1), cursor::Left(5))?;
         }
@@ -107,7 +106,33 @@ impl Display for State {
     }
 }
 
-pub struct Keyboard([Option<Match>; 26]);
+pub struct Keyboard {
+    arangement: String,
+    letters: [Option<Match>; 26],
+}
+
+impl Keyboard {
+    pub fn push(&mut self, word: &str, matches: Matches) {
+        for (b, m) in word.bytes().zip(matches.0) {
+            let b = (b - b'a') as usize;
+            let m2 = &mut self.letters[b];
+            *m2 = Some(match (m, *m2) {
+                (_, Some(Match::Exact)) | (Match::Exact, _) => Match::Exact,
+                (_, Some(Match::Close)) | (Match::Close, _) => Match::Close,
+                (_, Some(Match::Wrong)) | (Match::Wrong, _) => Match::Wrong,
+            });
+        }
+    }
+}
+
+impl Default for Keyboard {
+    fn default() -> Self {
+        Self {
+            arangement: ('A'..='Z').collect(),
+            letters: [None; 26],
+        }
+    }
+}
 
 impl Display for Keyboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -118,40 +143,26 @@ impl Display for Keyboard {
             start = cursor::Goto(15, 3)
         )?;
 
-        const LAYOUT: &[&str] = &["ABCDEFG", "HIJKLMN", "OPQRSTU", " VWXYZ"];
-
-        for (i, layout) in LAYOUT.iter().enumerate() {
-            for (mut j, b) in layout.bytes().enumerate() {
-                if i == 3 && j == 0 {
-                    write!(f, " ")?;
-                    continue;
-                }
-                if i == 3 && j > 0 {
-                    j -= 1;
-                }
-                let c = b as char;
-                match self.0[i * 7 + j] {
-                    Some(Match::Green) => write!(f, "{}", c.fg::<Black>().bg::<Green>())?,
-                    Some(Match::Amber) => write!(f, "{}", c.fg::<Black>().bg::<Yellow>())?,
-                    Some(Match::Black) => write!(f, "{}", c.fg::<Gray>())?,
-                    None => write!(f, "{}", c)?,
-                }
+        for (i, b) in self.arangement.bytes().enumerate() {
+            if i == 7 || i == 14 || i == 21 {
+                write!(f, "{}{}", cursor::Down(1), cursor::Left(7))?;
             }
-            write!(
-                f,
-                "{down}{left}",
-                down = cursor::Down(1),
-                left = cursor::Left(7)
-            )?;
+            if i == 21 {
+                write!(f, " ")?;
+            }
+            match self.letters[i] {
+                Some(m) => write!(f, "{}", LetterMatch(b as char, m))?,
+                None => write!(f, "{}", b as char)?,
+            }
         }
 
-        write!(f, "{restore}", restore = cursor::Restore,)?;
+        write!(f, "{restore}", restore = cursor::Restore)?;
 
         Ok(())
     }
 }
 
-impl Game {
+impl GameController {
     pub fn new() -> Result<Self> {
         let now =
             time::OffsetDateTime::now_local().wrap_err("could not determine local timezone")?;
@@ -180,13 +191,13 @@ impl Game {
         );
 
         Ok(Self {
-            base: GameBase {
+            base: Game {
                 state: State {
                     solution,
                     guesses: Vec::with_capacity(6),
                 },
                 game_type,
-                keyboard: Keyboard([None; 26]),
+                keyboard: Keyboard::default(),
             },
             terminal: MouseTerminal::from(
                 stdout()
@@ -281,11 +292,11 @@ impl Game {
     }
 }
 
-pub struct GameShare(GameBase);
+pub struct GameShare(Game);
 
 impl Display for GameShare {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let GameBase {
+        let Game {
             keyboard: _,
             state,
             game_type,
