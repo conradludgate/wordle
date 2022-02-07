@@ -118,7 +118,7 @@ impl Display for Keyboard {
             start = cursor::Goto(15, 3)
         )?;
 
-        const LAYOUT: &[&str] = &["ABCDEFG", "HIJKLMO", "OPQRSTU", " VWXYZ"];
+        const LAYOUT: &[&str] = &["ABCDEFG", "HIJKLMN", "OPQRSTU", " VWXYZ"];
 
         for (i, layout) in LAYOUT.iter().enumerate() {
             for (mut j, b) in layout.bytes().enumerate() {
