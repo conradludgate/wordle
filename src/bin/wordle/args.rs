@@ -18,7 +18,7 @@ pub enum GameMode {
 
 #[derive(Parser)]
 pub struct Custom {
-    pub word: String
+    pub word: String,
 }
 
 #[derive(Parser)]
