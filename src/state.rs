@@ -74,7 +74,7 @@ impl State {
             'X'
         };
 
-        write!(w, "{score}/6",)?;
+        write!(w, "{score}/6\n",)?;
         for Guess(_, m) in self.guesses() {
             write!(w, "\n{}", m)?;
         }
