@@ -1,4 +1,4 @@
-use std::{fmt, fmt::Display};
+use std::{fmt, io};
 
 use crossterm::{
     cursor,
@@ -14,9 +14,9 @@ pub struct Game {
     keyboard: Keyboard,
 }
 
-impl Display for Game {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (_width, height) = terminal::size().map_err(|_| std::fmt::Error)?;
+impl fmt::Display for Game {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (_width, height) = terminal::size().map_err(|_| fmt::Error)?;
 
         write!(
             f,
@@ -77,8 +77,8 @@ impl Game {
         self.state.finish()
     }
 
-    pub fn display_final_solution(&self) {
-        self.state.display_final_solution()
+    pub fn write_final_solution(&self, w: impl io::Write) -> io::Result<()> {
+        self.state.write_final_solution(w)
     }
 
     pub fn display_share_card(&self, mut f: impl fmt::Write) -> fmt::Result {
@@ -100,8 +100,8 @@ pub enum GameType {
     Custom,
 }
 
-impl Display for GameType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for GameType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             GameType::Daily(day) => write!(f, "{}", day),
             GameType::Custom => write!(f, "custom"),

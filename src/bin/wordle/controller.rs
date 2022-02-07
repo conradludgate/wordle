@@ -101,10 +101,23 @@ impl GameController {
             }
         };
 
-        let share = self.share()?;
         if !win {
-            share.0.display_final_solution();
+            self.game.write_final_solution(&mut self.stdout)?;
         }
+
+        execute!(self.stdout, cursor::Hide)?;
+
+        loop {
+            self.stdout.flush()?;
+            if let event::Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Enter | KeyCode::Esc => break,
+                    _ => {}
+                }
+            }
+        }
+
+        let share = self.share()?;
         Ok(Some(share))
     }
 

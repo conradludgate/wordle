@@ -1,9 +1,9 @@
-use std::fmt;
+use std::{fmt, io};
 
-use cl_wordle::Matches;
+use cl_wordle::{Match, Matches};
 use crossterm::cursor;
 
-use crate::letters::LetterMatch;
+use crate::letters::{LetterMatch, WordMatch};
 
 pub struct State {
     solution: String,
@@ -34,8 +34,10 @@ impl State {
         }
     }
 
-    pub fn display_final_solution(&self) {
-        println!("Solution was '{}'", self.solution.to_ascii_uppercase());
+    pub fn write_final_solution(&self, mut w: impl io::Write) -> io::Result<()> {
+        write!(w, "{}", cursor::MoveDown(1))?;
+        write!(w, "{}", WordMatch(&self.solution, Match::Exact))?;
+        write!(w, "{}", cursor::MoveTo(0, 10))
     }
 
     pub fn display_score_card(&self, mut w: impl fmt::Write) -> fmt::Result {
