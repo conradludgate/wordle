@@ -118,7 +118,7 @@ impl Controller {
 
         write!(
             self.stdout,
-            "{clear_all}{bottom_left}Press ESC to exit.{top_left}Wordle {game_type}{down}{keyboard}{state}",
+            "{clear_all}{bottom_left}Press ESC to exit.{top_left}Termo {game_type}{down}{keyboard}{state}",
             clear_all = Clear(ClearType::All),
             bottom_left = cursor::MoveTo(0, height-1),
             top_left = cursor::MoveTo(0, 0),
