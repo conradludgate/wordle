@@ -1,58 +1,23 @@
 use std::{
     fmt::Display,
-    io,
-    io::{stdout, Stdout, Write},
+    io::{self, Write},
 };
 
 use crossterm::{
     cursor,
     event::{self, KeyCode},
-    execute, style, terminal,
+    execute,
 };
 use eyre::Result;
 use owo_colors::{colors::Red, OwoColorize};
 
 use cl_wordle as wordle;
 
-use crate::game::Game;
+use crate::{game::Game, terminal::Terminal};
 
 pub struct GameController {
     game: Game,
     stdout: Terminal,
-}
-
-struct Terminal(Stdout);
-
-impl Write for Terminal {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.flush()
-    }
-}
-
-impl Terminal {
-    fn new() -> io::Result<Self> {
-        let mut stdout = stdout();
-        execute!(stdout, terminal::EnterAlternateScreen)?;
-        terminal::enable_raw_mode()?;
-        Ok(Self(stdout))
-    }
-}
-
-impl Drop for Terminal {
-    fn drop(&mut self) {
-        execute!(
-            self.0,
-            style::ResetColor,
-            cursor::Show,
-            terminal::LeaveAlternateScreen
-        )
-        .unwrap();
-        terminal::disable_raw_mode().unwrap();
-    }
 }
 
 impl GameController {
@@ -102,7 +67,7 @@ impl GameController {
         };
 
         if !win {
-            self.game.write_final_solution(&mut self.stdout)?;
+            self.game.write_final_solution(&mut *self.stdout)?;
         }
 
         execute!(self.stdout, cursor::Hide)?;

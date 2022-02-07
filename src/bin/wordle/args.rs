@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
+#[clap(name = "wordle", author, version)]
 pub struct App {
     #[clap(subcommand)]
     pub game_mode: Option<GameMode>,

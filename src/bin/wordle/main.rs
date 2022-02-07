@@ -6,6 +6,7 @@ mod game;
 mod keyboard;
 mod letters;
 mod state;
+mod terminal;
 
 use args::{App, GameMode};
 use controller::GameController;
