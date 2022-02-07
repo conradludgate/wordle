@@ -88,16 +88,16 @@ pub fn diff(input: &str, solution: &str) -> Matches {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn diff() {
-        use super::Match::{self, *};
-        let table: [(&str, &str, [Match; 5]); 3] = [
-            ("class", "crest", [Exact, Wrong, Wrong, Exact, Wrong]),
-            ("stars", "crest", [Close, Close, Wrong, Close, Wrong]),
-            ("kills", "skill", [Close, Close, Close, Exact, Close]),
-        ];
-        for (input, solution, matches) in table {
-            assert_eq!(super::diff(input, solution).0, matches);
-        }
+    use super::{
+        diff,
+        Match::{self, *},
+    };
+    use test_case::test_case;
+
+    #[test_case("class", "crest", [Exact, Wrong, Wrong, Exact, Wrong]; "double letter, one exact, one wrong")]
+    #[test_case("stars", "crest", [Close, Close, Wrong, Close, Wrong]; "double letter, one close, one wrong")]
+    #[test_case("kills", "skill", [Close, Close, Close, Exact, Close]; "double letter, one exact, one close")]
+    fn test_diff(input: &str, solution: &str, matches: [Match; 5]) {
+        assert_eq!(diff(input, solution).0, matches);
     }
 }

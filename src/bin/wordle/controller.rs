@@ -1,17 +1,16 @@
 use std::{
     fmt::Display,
     io,
-    io::{stdin, stdout, Stdout, Write},
+    io::{stdout, Stdout, Write},
 };
 
-use eyre::{Context, Result};
-use owo_colors::{colors::Red, OwoColorize};
-use termion::{
+use crossterm::{
     cursor,
-    event::Key,
-    input::{MouseTerminal, TermRead},
-    raw::{IntoRawMode, RawTerminal},
+    event::{self, KeyCode},
+    execute, style, terminal,
 };
+use eyre::Result;
+use owo_colors::{colors::Red, OwoColorize};
 
 use cl_wordle as wordle;
 
@@ -19,85 +18,107 @@ use crate::game::Game;
 
 pub struct GameController {
     game: Game,
-    terminal: MouseTerminal<RawTerminal<Stdout>>,
+    stdout: Terminal,
+}
+
+struct Terminal(Stdout);
+
+impl Write for Terminal {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.flush()
+    }
+}
+
+impl Terminal {
+    fn new() -> io::Result<Self> {
+        let mut stdout = stdout();
+        execute!(stdout, terminal::EnterAlternateScreen)?;
+        terminal::enable_raw_mode()?;
+        Ok(Self(stdout))
+    }
+}
+
+impl Drop for Terminal {
+    fn drop(&mut self) {
+        execute!(
+            self.0,
+            style::ResetColor,
+            cursor::Show,
+            terminal::LeaveAlternateScreen
+        )
+        .unwrap();
+        terminal::disable_raw_mode().unwrap();
+    }
 }
 
 impl GameController {
     pub fn new(game: Game) -> Result<Self> {
         Ok(Self {
             game,
-            terminal: MouseTerminal::from(
-                stdout()
-                    .into_raw_mode()
-                    .wrap_err("could not get handle on a TTY")?,
-            ),
+            stdout: Terminal::new()?,
         })
     }
 
     pub fn run(mut self) -> Result<Option<GameShare>> {
         self.display_window()?;
-        self.terminal.flush()?;
 
         let mut word = String::with_capacity(5);
 
-        for c in stdin().keys() {
-            let evt = c?;
-            match evt {
-                Key::Esc => return Ok(None),
-                Key::Char(c) if c.is_ascii_alphabetic() && word.len() < 5 => {
-                    let c = c.to_ascii_lowercase();
-                    write!(self.terminal, "{}", c.to_ascii_uppercase())?;
-                    word.push(c);
-                }
-                Key::Char('\n') if word.len() == 5 => {
-                    if wordle::valid(&word) {
-                        self.game.push(&word);
-                        self.display_window()?;
-
-                        match self.game.finish() {
-                            Some(true) => {
-                                return Ok(Some(self.share()?));
-                            }
-                            Some(false) => {
-                                self.game.write_final_solution(&mut self.terminal)?;
-                                return Ok(Some(self.share()?));
-                            }
-                            None => {}
-                        }
-
-                        word.clear();
-                    } else {
-                        self.display_invalid(&word)?;
+        let win = loop {
+            self.stdout.flush()?;
+            if let event::Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Esc => return Ok(None),
+                    KeyCode::Char(c) if c.is_ascii_alphabetic() && word.len() < 5 => {
+                        let c = c.to_ascii_lowercase();
+                        write!(self.stdout, "{}", c.to_ascii_uppercase())?;
+                        word.push(c);
                     }
-                }
-                Key::Backspace => {
-                    word.pop();
-                    write!(self.terminal, "{back} {back}", back = cursor::Left(1))?;
-                }
-                _ => {}
-            }
-            self.terminal.flush()?;
-        }
+                    KeyCode::Enter if word.len() == 5 => {
+                        if wordle::valid(&word) {
+                            self.game.push(&word);
+                            self.display_window()?;
 
-        Ok(None)
+                            if let Some(win) = self.game.finish() {
+                                break win;
+                            }
+
+                            word.clear();
+                        } else {
+                            self.display_invalid(&word)?;
+                        }
+                    }
+                    KeyCode::Backspace => {
+                        word.pop();
+                        write!(self.stdout, "{back} {back}", back = cursor::MoveLeft(1))?;
+                    }
+                    _ => {}
+                }
+            }
+        };
+
+        let share = self.share()?;
+        if !win {
+            share.0.display_final_solution();
+        }
+        Ok(Some(share))
     }
 
-    fn share(mut self) -> Result<GameShare> {
-        write!(self.terminal, "{}", cursor::Goto(1, 12))?;
+    fn share(self) -> Result<GameShare> {
         Ok(GameShare(self.game))
     }
 
     fn display_invalid(&mut self, invalid: &str) -> io::Result<()> {
         self.display_window()?;
-        write!(
-            self.terminal,
-            "{}",
-            invalid.to_ascii_uppercase().bg::<Red>()
-        )
+        write!(self.stdout, "{}", invalid.to_ascii_uppercase().bg::<Red>())
     }
 
     fn display_window(&mut self) -> io::Result<()> {
-        write!(self.terminal, "{}", self.game)
+        write!(self.stdout, "{}", self.game)
     }
 }
 

@@ -1,7 +1,10 @@
-use std::{fmt, fmt::Display, io};
+use std::{fmt, fmt::Display};
 
+use crossterm::{
+    cursor,
+    terminal::{self, Clear, ClearType},
+};
 use eyre::{ensure, Context, Result};
-use termion::{cursor, terminal_size};
 
 use super::{keyboard::Keyboard, state::State};
 
@@ -13,16 +16,16 @@ pub struct Game {
 
 impl Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (_width, height) = terminal_size().map_err(|_| std::fmt::Error)?;
+        let (_width, height) = terminal::size().map_err(|_| std::fmt::Error)?;
 
         write!(
             f,
             "{clear_all}{bottom_left}Press ESC to exit.{top_left}Wordle {game_type}{down}{keyboard}{state}",
-            clear_all = termion::clear::All,
-            bottom_left = cursor::Goto(1, height),
-            top_left = cursor::Goto(1, 1),
+            clear_all = Clear(ClearType::All),
+            bottom_left = cursor::MoveTo(0, height-1),
+            top_left = cursor::MoveTo(0, 0),
             game_type = self.game_type,
-            down = cursor::Goto(1, 3),
+            down = cursor::MoveTo(0, 2),
             keyboard = self.keyboard,
             state = self.state
         )?;
@@ -74,8 +77,8 @@ impl Game {
         self.state.finish()
     }
 
-    pub fn write_final_solution(&self, w: impl io::Write) -> io::Result<()> {
-        self.state.write_final_solution(w)
+    pub fn display_final_solution(&self) {
+        self.state.display_final_solution()
     }
 
     pub fn display_share_card(&self, mut f: impl fmt::Write) -> fmt::Result {

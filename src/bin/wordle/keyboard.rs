@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use cl_wordle::{Match, Matches};
-use termion::cursor;
+use crossterm::cursor;
 
 use crate::letters::LetterMatch;
 
@@ -38,13 +38,13 @@ impl Display for Keyboard {
         write!(
             f,
             "{save}{start}",
-            save = cursor::Save,
-            start = cursor::Goto(15, 3)
+            save = cursor::SavePosition,
+            start = cursor::MoveTo(14, 2)
         )?;
 
         for (i, b) in self.arangement.bytes().enumerate() {
             if i == 7 || i == 14 || i == 21 {
-                write!(f, "{}{}", cursor::Down(1), cursor::Left(7))?;
+                write!(f, "{}{}", cursor::MoveDown(1), cursor::MoveLeft(7))?;
             }
             if i == 21 {
                 write!(f, " ")?;
@@ -55,7 +55,7 @@ impl Display for Keyboard {
             }
         }
 
-        write!(f, "{restore}", restore = cursor::Restore)?;
+        write!(f, "{restore}", restore = cursor::RestorePosition)?;
 
         Ok(())
     }

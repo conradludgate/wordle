@@ -1,9 +1,9 @@
-use std::{fmt, fmt::Display, io};
+use std::fmt;
 
-use cl_wordle::{Match, Matches};
-use termion::cursor;
+use cl_wordle::Matches;
+use crossterm::cursor;
 
-use crate::letters::{LetterMatch, WordMatch};
+use crate::letters::LetterMatch;
 
 pub struct State {
     solution: String,
@@ -34,10 +34,8 @@ impl State {
         }
     }
 
-    pub fn write_final_solution(&self, mut w: impl io::Write) -> io::Result<()> {
-        write!(w, "{}", cursor::Down(1))?;
-        write!(w, "{}", WordMatch(&self.solution, Match::Exact))?;
-        write!(w, "{}", cursor::Goto(1, 11))
+    pub fn display_final_solution(&self) {
+        println!("Solution was '{}'", self.solution.to_ascii_uppercase());
     }
 
     pub fn display_score_card(&self, mut w: impl fmt::Write) -> fmt::Result {
@@ -57,14 +55,14 @@ impl State {
     }
 }
 
-impl Display for State {
+impl fmt::Display for State {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for input in &self.guesses {
             let matches = cl_wordle::diff(&*input, &*self.solution);
             for (m, c) in matches.0.into_iter().zip(input.chars()) {
                 write!(f, "{}", LetterMatch(c, m))?;
             }
-            write!(f, "{}{}", cursor::Down(1), cursor::Left(5))?;
+            write!(f, "{}{}", cursor::MoveDown(1), cursor::MoveLeft(5))?;
         }
         Ok(())
     }
