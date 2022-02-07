@@ -6,7 +6,7 @@ use cl_wordle::{
 };
 use crossterm::cursor;
 
-use crate::letters::LetterMatch;
+use super::letters::LetterMatch;
 
 pub struct Guesses<'a>(&'a State);
 

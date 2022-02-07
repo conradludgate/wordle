@@ -3,7 +3,7 @@ use std::fmt::Display;
 use cl_wordle::{Match, Matches};
 use crossterm::cursor;
 
-use crate::letters::LetterMatch;
+use super::letters::LetterMatch;
 
 pub struct Keyboard {
     arangement: String,

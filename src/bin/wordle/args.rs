@@ -4,6 +4,13 @@ use time::macros::format_description;
 #[derive(Parser)]
 #[clap(name = "wordle", author, version)]
 pub struct App {
+    #[clap(long)]
+    #[cfg(feature = "tui")]
+    /// Disables the TUI
+    ///
+    /// This disables the TUI and any enriched experience
+    pub no_tui: bool,
+
     #[clap(subcommand)]
     pub game_mode: Option<GameMode>,
 }
@@ -16,6 +23,7 @@ pub enum GameMode {
     Day(Day),
     /// Play the specified date's wordle
     Date(Date),
+    #[cfg(feature = "rand")]
     /// Play a random day
     Random,
 }

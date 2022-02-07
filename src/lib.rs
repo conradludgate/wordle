@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 pub mod words;
 pub mod state;
+pub mod game;
 
 /// Gets the solution word for the given day
 pub fn get_solution(day: usize) -> &'static str {
