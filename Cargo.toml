@@ -1,7 +1,7 @@
 [package]
 name = "cl-wordle"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "MIT"
 description = "Wordle in your terminal"
@@ -22,8 +22,8 @@ rand = { version = "0.8", optional = true }
 test-case = "1.2.2"
 
 [features]
-default = ["tui", "rand"]
-tui = ["owo-colors", "crossterm", "cli"]
+default = ["tui"]
+tui = ["owo-colors", "crossterm", "rand", "cli"]
 cli = ["time", "clap"]
 
 [[bin]]

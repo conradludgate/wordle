@@ -1,9 +1,6 @@
 use std::fmt;
 
-use cl_wordle::{
-    state::{Guess, State},
-    Matches,
-};
+use cl_wordle::{state::State, Matches};
 use crossterm::cursor;
 
 use super::letters::LetterMatch;
@@ -18,7 +15,7 @@ impl<'a> From<&'a State> for Guesses<'a> {
 
 impl<'a> fmt::Display for Guesses<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for Guess(w, Matches(m)) in self.0.guesses() {
+        for (w, Matches(m)) in self.0.guesses() {
             for (b, m) in w.bytes().zip(m) {
                 write!(f, "{}", LetterMatch(b as char, m))?;
             }

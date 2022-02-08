@@ -1,30 +1,16 @@
 use std::fmt;
 
-use crate::{Matches, valid};
+use crate::{iter::StateIter, valid, Match, Matches};
 
 pub struct State {
     solution: String,
     guesses: Vec<String>,
 }
 
-pub struct Guess<'a>(pub &'a str, pub Matches);
-
-pub struct StateIter<'a> {
-    solution: &'a str,
-    guesses: std::slice::Iter<'a, String>,
+pub enum GuessError {
+    MissingExactValues(usize),
+    NotInWordList,
 }
-
-impl<'a> Iterator for StateIter<'a> {
-    type Item = Guess<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.guesses
-            .next()
-            .map(|input| Guess(&*input, crate::diff(&*input, self.solution)))
-    }
-}
-
-pub struct GuessError;
 
 impl State {
     pub fn new(solution: String) -> Self {
@@ -45,12 +31,24 @@ impl State {
         }
     }
 
-    pub fn guess(&mut self, word: &str) -> Result<Matches, GuessError> {
+    pub fn guess(&mut self, word: &str, hard: bool) -> Result<Matches, GuessError> {
         if valid(word) {
+            if hard {
+                if let Some((last_word, matches)) = self.guesses().last() {
+                    for i in 0..5 {
+                        if matches[i] == Match::Exact
+                            && last_word.as_bytes()[i] != word.as_bytes()[i]
+                        {
+                            return Err(GuessError::MissingExactValues(i));
+                        }
+                    }
+                }
+            }
+
             self.guesses.push(word.to_owned());
             Ok(crate::diff(word, &*self.solution))
         } else {
-            Err(GuessError)
+            Err(GuessError::NotInWordList)
         }
     }
 
@@ -75,8 +73,8 @@ impl State {
         };
 
         write!(w, "{score}/6",)?;
-        for Guess(_, m) in self.guesses() {
-            write!(w, "\n{}", m)?;
+        for g in self.guesses() {
+            write!(w, "\n{}", g.1)?;
         }
         Ok(())
     }

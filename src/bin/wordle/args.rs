@@ -11,6 +11,13 @@ pub struct App {
     /// This disables the TUI and any enriched experience
     pub no_tui: bool,
 
+    #[clap(long)]
+    /// Enables hard mode
+    ///
+    /// Hard mode adds the restriction that you must only make
+    /// guesses including the all exact matches you have found
+    pub hard: bool,
+
     #[clap(subcommand)]
     pub game_mode: Option<GameMode>,
 }

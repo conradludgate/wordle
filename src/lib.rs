@@ -1,8 +1,9 @@
-use std::fmt::Display;
+use std::{fmt::Display, ops::Deref};
 
 pub mod words;
 pub mod state;
 pub mod game;
+pub mod iter;
 
 /// Gets the solution word for the given day
 pub fn get_solution(day: usize) -> &'static str {
@@ -50,6 +51,14 @@ impl Display for Matches {
             write!(f, "{}", m)?;
         }
         write!(f, "")
+    }
+}
+
+impl Deref for Matches {
+    type Target = [Match; 5];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

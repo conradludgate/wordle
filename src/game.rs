@@ -1,10 +1,11 @@
 use std::fmt;
 
-use crate::state::State;
+use crate::{state::{State, GuessError}, Matches};
 use eyre::{ensure, Result};
 
 pub struct Game {
     state: State,
+    hard_mode: bool,
     game_type: GameType,
 }
 
@@ -40,8 +41,13 @@ impl Game {
         );
         Ok(Self {
             state: State::new(solution),
+            hard_mode: false,
             game_type,
         })
+    }
+
+    pub fn hard_mode(&mut self) {
+        self.hard_mode = true;
     }
 
     pub fn game_type(&self) -> GameType {
@@ -52,8 +58,8 @@ impl Game {
         &self.state
     }
 
-    pub fn state_mut(&mut self) -> &mut State {
-        &mut self.state
+    pub fn guess(&mut self, word: &str) -> Result<Matches, GuessError> {
+        self.state.guess(word, self.hard_mode)
     }
 
     pub fn share(self) -> GameShare {

@@ -12,7 +12,7 @@ use rand::Rng;
 
 fn main() -> eyre::Result<()> {
     let app = App::parse();
-    let game = match app.game_mode {
+    let mut game = match app.game_mode {
         None => Game::new()?,
         Some(GameMode::Custom(custom)) => Game::custom(custom.word)?,
         Some(GameMode::Day(day)) => Game::from_day(day.day)?,
@@ -20,6 +20,10 @@ fn main() -> eyre::Result<()> {
         Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen())?,
         Some(GameMode::Date(date)) => Game::from_date(date.date)?,
     };
+
+    if app.hard {
+        game.hard_mode();
+    }
 
     #[cfg(feature = "tui")]
     let output = if app.no_tui {

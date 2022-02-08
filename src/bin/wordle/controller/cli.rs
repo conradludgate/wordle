@@ -21,7 +21,7 @@ impl Controller {
             line.clear();
             stdin.read_line(&mut line)?;
 
-            match self.game.state_mut().guess(line.trim_end()) {
+            match self.game.guess(line.trim_end()) {
                 Err(_) => println!("INVALID"),
                 Ok(m) => {
                     println!("{}", m);

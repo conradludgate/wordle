@@ -25,6 +25,7 @@ pub struct Controller {
     game: Game,
     keyboard: Keyboard,
     stdout: Terminal,
+    word: String,
 }
 
 impl Controller {
@@ -33,38 +34,39 @@ impl Controller {
             game,
             keyboard: Keyboard::default(),
             stdout: Terminal::new()?,
+            word: String::with_capacity(5),
         })
     }
 
     pub fn run(mut self) -> Result<Option<GameShare>> {
         self.display_window()?;
 
-        let mut word = String::with_capacity(5);
-
         let win = loop {
             self.stdout.flush()?;
             if let event::Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Esc => return Ok(None),
-                    KeyCode::Char(c) if c.is_ascii_alphabetic() && word.len() < 5 => {
-                        let c = c.to_ascii_lowercase();
-                        write!(self.stdout, "{}", c.to_ascii_uppercase())?;
-                        word.push(c);
-                    }
-                    KeyCode::Enter if word.len() == 5 => match self.guess(&*word) {
+                    KeyCode::Enter if self.word.len() == 5 => match self.guess() {
                         Ok(()) => {
                             self.display_window()?;
 
                             if let Some(win) = self.game.state().game_over() {
                                 break win;
                             }
-
-                            word.clear();
                         }
-                        Err(_) => self.display_invalid(&word)?,
+                        Err(_) => self.display_invalid()?,
                     },
+                    KeyCode::Char(',') => {
+                        self.keyboard.shuffle();
+                        self.display_window()?;
+                    }
+                    KeyCode::Char(c) if c.is_ascii_alphabetic() && self.word.len() < 5 => {
+                        let c = c.to_ascii_lowercase();
+                        write!(self.stdout, "{}", c.to_ascii_uppercase())?;
+                        self.word.push(c);
+                    }
                     KeyCode::Backspace => {
-                        word.pop();
+                        self.word.pop();
                         write!(self.stdout, "{back} {back}", back = cursor::MoveLeft(1))?;
                     }
                     _ => {}
@@ -91,9 +93,10 @@ impl Controller {
         Ok(Some(self.game.share()))
     }
 
-    fn guess(&mut self, word: &str) -> Result<(), GuessError> {
-        let matches = self.game.state_mut().guess(word)?;
-        self.keyboard.push(word, matches);
+    fn guess(&mut self) -> Result<(), GuessError> {
+        let matches = self.game.guess(&*self.word)?;
+        self.keyboard.push(&*self.word, matches);
+        self.word.clear();
         Ok(())
     }
 
@@ -107,9 +110,14 @@ impl Controller {
         write!(self.stdout, "{}", cursor::MoveTo(0, 10))
     }
 
-    fn display_invalid(&mut self, invalid: &str) -> io::Result<()> {
+    fn display_invalid(&mut self) -> io::Result<()> {
         self.display_window()?;
-        write!(self.stdout, "{}", invalid.to_ascii_uppercase().bg::<Red>())
+        write!(
+            self.stdout,
+            "{back}{invalid}",
+            back = cursor::MoveLeft(5),
+            invalid = self.word.to_ascii_uppercase().bg::<Red>()
+        )
     }
 
     fn display_window(&mut self) -> io::Result<()> {
@@ -118,14 +126,20 @@ impl Controller {
 
         write!(
             self.stdout,
-            "{clear_all}{bottom_left}Press ESC to exit.{top_left}Wordle {game_type}{down}{keyboard}{state}",
+            "{clear_all}{bottom_left}> Press ESC to exit. Press ',' to shuffle the keyboard.",
             clear_all = Clear(ClearType::All),
-            bottom_left = cursor::MoveTo(0, height-1),
+            bottom_left = cursor::MoveTo(0, height - 1),
+        )?;
+
+        write!(
+            self.stdout,
+            "{top_left}Wordle {game_type}{down}{keyboard}{state}{word}",
             top_left = cursor::MoveTo(0, 0),
             game_type = self.game.game_type(),
             down = cursor::MoveTo(0, 2),
             keyboard = self.keyboard,
             state = Guesses::from(self.game.state()),
+            word = self.word.to_ascii_uppercase(),
         )?;
 
         Ok(())
