@@ -22,12 +22,16 @@ impl Keyboard {
                 (_, Some(Match::Wrong)) | (Match::Wrong, _) => Match::Wrong,
             });
         }
+        self.sort();
+    }
+
+    /// sorts letters that are `Some(Wrong)` to the end of the list
+    fn sort(&mut self) {
+        self.arangement
+            .sort_by_key(|&b| self.letters[(b - b'A') as usize]);
     }
 
     pub fn shuffle(&mut self) {
-        // sorts letters that are `Some(Wrong)` to the end of the list
-        self.arangement
-            .sort_by_key(|&b| self.letters[(b - b'A') as usize]);
         // finds the first wrong position, otherwise just returns the length (end)
         let i = self
             .arangement
