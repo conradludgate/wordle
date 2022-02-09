@@ -25,7 +25,17 @@ impl Keyboard {
     }
 
     pub fn shuffle(&mut self) {
-        self.arangement.shuffle(&mut rand::thread_rng())
+        // sorts letters that are `Some(Wrong)` to the end of the list
+        self.arangement
+            .sort_by_key(|&b| self.letters[(b - b'A') as usize]);
+        // finds the first wrong position, otherwise just returns the length (end)
+        let i = self
+            .arangement
+            .iter()
+            .position(|&b| self.letters[(b - b'A') as usize] == Some(Match::Wrong))
+            .unwrap_or(self.arangement.len());
+        // shuffles the current valid range of letters
+        self.arangement[..i].shuffle(&mut rand::thread_rng())
     }
 }
 

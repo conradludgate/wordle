@@ -21,7 +21,7 @@ pub fn valid(word: &str) -> bool {
     words::ACCEPT.contains(&word) || words::FINAL.contains(&word)
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 /// Represents a match for a given letter against the solution
 pub enum Match {
     /// Letter is in the correct position
@@ -33,7 +33,14 @@ pub enum Match {
 }
 
 /// Represents the outcome for a single guess
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Matches(pub [Match; 5]);
+
+impl Matches {
+    pub fn win(self) -> bool {
+        self.0 == [Match::Exact; 5]
+    }
+}
 
 impl Display for Match {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -63,11 +70,11 @@ impl Deref for Matches {
 }
 
 pub fn diff(input: &str, solution: &str) -> Matches {
-    assert!(
+    debug_assert!(
         input.is_ascii(),
         "input guess should only be 5 ascii letters"
     );
-    assert_eq!(input.len(), 5, "input guess should only be 5 ascii letters");
+    debug_assert_eq!(input.len(), 5, "input guess should only be 5 ascii letters");
     debug_assert!(solution.is_ascii());
     debug_assert_eq!(solution.len(), 5);
 

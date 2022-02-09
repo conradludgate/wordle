@@ -15,10 +15,10 @@ fn main() -> eyre::Result<()> {
     let mut game = match app.game_mode {
         None => Game::new()?,
         Some(GameMode::Custom(custom)) => Game::custom(custom.word)?,
-        Some(GameMode::Day(day)) => Game::from_day(day.day)?,
+        Some(GameMode::Day(day)) => Game::from_day(day.day),
         #[cfg(feature = "rand")]
-        Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen())?,
-        Some(GameMode::Date(date)) => Game::from_date(date.date)?,
+        Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen()),
+        Some(GameMode::Date(date)) => Game::from_date(date.date),
     };
 
     if app.hard {

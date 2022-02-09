@@ -7,6 +7,7 @@ pub struct State {
     guesses: Vec<String>,
 }
 
+#[derive(Debug)]
 pub enum GuessError {
     MissingExactValues(usize),
     NotInWordList,
