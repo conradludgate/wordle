@@ -53,6 +53,6 @@ pub struct Date {
 }
 
 fn parse_date(input: &str) -> Result<time::Date, time::error::Parse> {
-    let description = format_description!("[year]-[month]-[day]");
+    let description = format_description!("[year]-[month padding:none]-[day padding:none]");
     time::Date::parse(input, description)
 }
