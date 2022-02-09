@@ -4,6 +4,7 @@ pub mod words;
 pub mod state;
 pub mod game;
 pub mod iter;
+pub mod cheat;
 
 /// Gets the solution word for the given day
 pub fn get_solution(day: usize) -> &'static str {
