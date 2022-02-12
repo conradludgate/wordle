@@ -7,7 +7,7 @@ use cl_wordle::{
 };
 use crossterm::{
     cursor,
-    event::{self, KeyCode},
+    event::{self, KeyCode, KeyModifiers},
     execute,
     terminal::{Clear, ClearType},
 };
@@ -44,9 +44,13 @@ impl Controller {
         let win = loop {
             self.stdout.flush()?;
             if let event::Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Esc => return Ok(None),
-                    KeyCode::Enter if self.word.len() == 5 => match self.guess() {
+                match (key.code, key.modifiers) {
+                    (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
+                        self.word.clear();
+                        self.display_window()?;
+                    }
+                    (KeyCode::Esc, _) => return Ok(None),
+                    (KeyCode::Enter, _) if self.word.len() == 5 => match self.guess() {
                         Ok(()) => {
                             self.display_window()?;
 
@@ -56,16 +60,16 @@ impl Controller {
                         }
                         Err(_) => self.display_invalid()?,
                     },
-                    KeyCode::Char(',') => {
+                    (KeyCode::Char(','), _) => {
                         self.keyboard.shuffle();
                         self.display_window()?;
                     }
-                    KeyCode::Char(c) if c.is_ascii_alphabetic() && self.word.len() < 5 => {
+                    (KeyCode::Char(c), _) if c.is_ascii_alphabetic() && self.word.len() < 5 => {
                         let c = c.to_ascii_lowercase();
                         write!(self.stdout, "{}", c.to_ascii_uppercase())?;
                         self.word.push(c);
                     }
-                    KeyCode::Backspace => {
+                    (KeyCode::Backspace, _) => {
                         self.word.pop();
                         write!(self.stdout, "{back} {back}", back = cursor::MoveLeft(1))?;
                     }
