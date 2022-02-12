@@ -90,7 +90,7 @@ pub struct GameShare(Game);
 impl fmt::Display for GameShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Wordle {game_type} ", game_type = self.0.game_type())?;
-        self.0.state().display_score_card(f)?;
+        self.0.state().display_score_card(f, self.0.hard_mode)?;
         Ok(())
     }
 }
