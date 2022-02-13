@@ -54,7 +54,10 @@ impl Controller {
                                 break win;
                             }
                         }
-                        Err(_) => self.display_invalid()?,
+                        Err(_) => {
+                            self.display_window()?;
+                            self.display_invalid()?;
+                        }
                     },
                     KeyCode::Char(',') => {
                         self.keyboard.shuffle();
@@ -111,7 +114,6 @@ impl Controller {
     }
 
     fn display_invalid(&mut self) -> io::Result<()> {
-        self.display_window()?;
         write!(
             self.stdout,
             "{back}{invalid}",
@@ -141,6 +143,9 @@ impl Controller {
             state = Guesses::from(self.game.state()),
             word = self.word.to_ascii_uppercase(),
         )?;
+        if !self.game.guess(&*self.word).is_ok() {
+            self.display_invalid()?;
+        }
 
         Ok(())
     }
