@@ -44,7 +44,7 @@ impl Matches {
 
 impl Display for Match {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match (self, env::var("COLORBLIND_FRIENDLY")) {
+        match (self, env::var("COLORBLINDNESS")) {
             (Match::Exact, Err(_)) => write!(f, "🟩"),
             (Match::Exact, Ok(_)) => write!(f, "🟧"),
             (Match::Close, Err(_)) => write!(f, "🟨"),
