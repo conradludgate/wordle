@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::Deref};
+use std::{env, fmt::Display, ops::Deref};
 
 pub mod words;
 pub mod state;
@@ -44,10 +44,12 @@ impl Matches {
 
 impl Display for Match {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Match::Exact => write!(f, "🟩"),
-            Match::Close => write!(f, "🟨"),
-            Match::Wrong => write!(f, "⬛"),
+        match (self, env::var("COLORBLIND_FRIENDLY")) {
+            (Match::Exact, Err(_)) => write!(f, "🟩"),
+            (Match::Exact, Ok(_)) => write!(f, "🟧"),
+            (Match::Close, Err(_)) => write!(f, "🟨"),
+            (Match::Close, Ok(_)) => write!(f, "🟦"),
+            (Match::Wrong, _) => write!(f, "⬛"),
         }
     }
 }
