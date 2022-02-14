@@ -12,7 +12,7 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 use eyre::Result;
-use owo_colors::{colors::Red, OwoColorize};
+use owo_colors::{colors::{Red, White}, OwoColorize};
 
 mod guess;
 mod keyboard;
@@ -116,7 +116,7 @@ impl Controller {
             self.stdout,
             "{back}{invalid}",
             back = cursor::MoveLeft(5),
-            invalid = self.word.to_ascii_uppercase().bg::<Red>()
+            invalid = self.word.to_ascii_uppercase().fg::<White>().bg::<Red>()
         )
     }
 
