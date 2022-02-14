@@ -1,7 +1,7 @@
 [package]
 name = "cl-wordle"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
 license = "MIT"
 description = "Wordle in your terminal"

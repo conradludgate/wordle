@@ -13,7 +13,28 @@ pub enum GuessError {
     NotInWordList,
 }
 
+pub enum GameOver {
+    Win,
+    Lose,
+}
+
+impl GameOver {
+    pub fn is_win(&self) -> bool {
+        match self {
+            GameOver::Win => true,
+            GameOver::Lose => false,
+        }
+    }
+    pub fn is_lose(&self) -> bool {
+        match self {
+            GameOver::Win => false,
+            GameOver::Lose => true,
+        }
+    }
+}
+
 impl State {
+    /// Create a new game state from the solution
     pub fn new(solution: String) -> Self {
         Self {
             solution,
@@ -21,10 +42,12 @@ impl State {
         }
     }
 
+    /// Reveal the solution for the current game state
     pub fn solution(&self) -> &str {
         &*self.solution
     }
 
+    /// Returns an iterator over the previous guesses
     pub fn guesses(&self) -> StateIter<'_> {
         StateIter {
             solution: &*self.solution(),
@@ -32,6 +55,11 @@ impl State {
         }
     }
 
+    /// Make a guess.
+    ///
+    /// # Errors
+    /// If the guess is an invalid word, or if it doesn't match the
+    /// requirements of hard mode, this function will return an error
     pub fn guess(&mut self, word: &str, hard: bool) -> Result<Matches, GuessError> {
         if valid(word) {
             if hard {
@@ -53,17 +81,19 @@ impl State {
         }
     }
 
-    pub fn game_over(&self) -> Option<bool> {
+    /// Determine if the game is over.
+    pub fn game_over(&self) -> Option<GameOver> {
         let last = &self.guesses[self.guesses.len() - 1];
         if last == &self.solution {
-            Some(true)
+            Some(GameOver::Win)
         } else if self.guesses.len() >= 6 {
-            Some(false)
+            Some(GameOver::Lose)
         } else {
             None
         }
     }
 
+    /// Displays the score card for this game state to the given [`fmt::Write`].
     pub fn display_score_card(&self, mut w: impl fmt::Write, hard: bool) -> fmt::Result {
         let Self { solution, guesses } = self;
         let n = guesses.len();
@@ -73,7 +103,7 @@ impl State {
             'X'
         };
 
-        let hard_mode = if hard { '*' } else { ' ' };
+        let hard_mode = if hard { "*" } else { "" };
 
         write!(w, "{score}/6{hard_mode}",)?;
         for g in self.guesses() {

@@ -27,8 +27,7 @@ impl Keyboard {
 
     /// sorts letters that are `Some(Wrong)` to the end of the list
     fn sort(&mut self) {
-        self.arangement
-            .sort_by_key(|&b| self.letters[(b - b'A') as usize]);
+        self.arangement.sort_by_key(|&b| self.letters[b as usize]);
     }
 
     pub fn shuffle(&mut self) {
@@ -36,7 +35,7 @@ impl Keyboard {
         let i = self
             .arangement
             .iter()
-            .position(|&b| self.letters[(b - b'A') as usize] == Some(Match::Wrong))
+            .position(|&b| self.letters[b as usize] == Some(Match::Wrong))
             .unwrap_or(self.arangement.len());
         // shuffles the current valid range of letters
         self.arangement[..i].shuffle(&mut rand::thread_rng())
@@ -46,7 +45,7 @@ impl Keyboard {
 impl Default for Keyboard {
     fn default() -> Self {
         Self {
-            arangement: (b'A'..=b'Z').collect(),
+            arangement: (0..26).collect(),
             letters: [None; 26],
         }
     }
@@ -68,9 +67,10 @@ impl Display for Keyboard {
             if i == 21 {
                 write!(f, " ")?;
             }
-            match self.letters[(b - b'A') as usize] {
-                Some(m) => write!(f, "{}", LetterMatch(b as char, m))?,
-                None => write!(f, "{}", b as char)?,
+            let c = (b + b'A') as char;
+            match self.letters[b as usize] {
+                Some(m) => write!(f, "{}", LetterMatch(c, m))?,
+                None => write!(f, "{}", c)?,
             }
         }
 

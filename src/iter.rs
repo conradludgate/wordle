@@ -2,6 +2,7 @@ use crate::Matches;
 
 pub type Guess<'a> = (&'a str, Matches);
 
+/// Iterator over guesses in a game state
 pub struct StateIter<'a> {
     pub(crate) solution: &'a str,
     pub(crate) guesses: std::slice::Iter<'a, String>,

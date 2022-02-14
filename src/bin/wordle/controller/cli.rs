@@ -17,7 +17,7 @@ impl Controller {
         let stdin = stdin();
         let mut line = String::with_capacity(6);
 
-        let win = loop {
+        let game_over = loop {
             line.clear();
             stdin.read_line(&mut line)?;
 
@@ -25,17 +25,17 @@ impl Controller {
                 Err(_) => println!("INVALID"),
                 Ok(m) => {
                     println!("{}", m);
-                    if let Some(win) = self.game.state().game_over() {
+                    if let Some(win) = self.game.game_over() {
                         break win;
                     }
                 }
             }
         };
 
-        if !win {
+        if game_over.is_lose() {
             println!(
                 "GAME OVER - '{}'",
-                self.game.state().solution().to_ascii_uppercase()
+                self.game.solution().to_ascii_uppercase()
             );
         }
 

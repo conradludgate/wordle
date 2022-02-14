@@ -12,7 +12,10 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 use eyre::Result;
-use owo_colors::{colors::{Red, White}, OwoColorize};
+use owo_colors::{
+    colors::{Red, White},
+    OwoColorize,
+};
 
 mod guess;
 mod keyboard;
@@ -41,7 +44,7 @@ impl Controller {
     pub fn run(mut self) -> Result<Option<GameShare>> {
         self.display_window()?;
 
-        let win = loop {
+        let game_over = loop {
             self.stdout.flush()?;
             if let event::Event::Key(key) = event::read()? {
                 match key.code {
@@ -50,7 +53,7 @@ impl Controller {
                         Ok(()) => {
                             self.display_window()?;
 
-                            if let Some(win) = self.game.state().game_over() {
+                            if let Some(win) = self.game.game_over() {
                                 break win;
                             }
                         }
@@ -77,7 +80,7 @@ impl Controller {
             }
         };
 
-        if !win {
+        if game_over.is_lose() {
             self.write_final_solution()?;
         }
 
@@ -108,7 +111,7 @@ impl Controller {
         write!(
             self.stdout,
             "{}",
-            WordMatch(self.game.state().solution(), Match::Exact)
+            WordMatch(self.game.solution(), Match::Exact)
         )?;
         write!(self.stdout, "{}", cursor::MoveTo(0, 10))
     }
@@ -140,10 +143,10 @@ impl Controller {
             game_type = self.game.game_type(),
             down = cursor::MoveTo(0, 2),
             keyboard = self.keyboard,
-            state = Guesses::from(self.game.state()),
+            state = Guesses::from(&*self.game),
             word = self.word.to_ascii_uppercase(),
         )?;
-        if !self.game.guess(&*self.word).is_ok() {
+        if self.game.guess(&*self.word).is_err() {
             self.display_invalid()?;
         }
 
