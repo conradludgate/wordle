@@ -64,7 +64,7 @@ impl State {
         }
     }
 
-    pub fn display_score_card(&self, mut w: impl fmt::Write) -> fmt::Result {
+    pub fn display_score_card(&self, mut w: impl fmt::Write, hard: bool) -> fmt::Result {
         let Self { solution, guesses } = self;
         let n = guesses.len();
         let score = if n < 6 || &guesses[5] == solution {
@@ -73,7 +73,9 @@ impl State {
             'X'
         };
 
-        write!(w, "{score}/6",)?;
+        let hard_mode = if hard { '*' } else { ' ' };
+
+        write!(w, "{score}/6{hard_mode}",)?;
         for g in self.guesses() {
             write!(w, "\n{}", g.1)?;
         }
