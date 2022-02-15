@@ -1,6 +1,7 @@
 mod nytimes;
 mod original;
 
+/// Definition of a word set in the game.
 #[derive(Clone, Copy)]
 pub struct WordSet<'a> {
     #[cfg(feature = "time")]
@@ -23,6 +24,7 @@ pub const ORIGINAL: WordSet<'static> = WordSet {
     acceptable: original::ACCEPT,
 };
 
+/// Set of the new NYTimes words
 pub const NYTIMES: WordSet<'static> = WordSet {
     #[cfg(feature = "time")]
     date_offset: time::macros::date!(2021 - 06 - 19),

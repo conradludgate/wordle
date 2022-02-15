@@ -88,7 +88,7 @@ impl Game {
     ///
     /// ```
     /// use cl_wordle::game::Game;
-    /// let mut game = Game::from_day(0);
+    /// let mut game = Game::from_day(0, cl_wordle::words::NYTIMES);
     /// game.guess("crane").unwrap();
     /// game.guess("carts").unwrap();
     /// game.guess("chair").unwrap();
@@ -126,7 +126,7 @@ impl fmt::Display for GameType {
 ///
 /// ```
 /// use cl_wordle::game::Game;
-/// let mut game = Game::from_day(0);
+/// let mut game = Game::from_day(0, cl_wordle::words::NYTIMES);
 /// game.guess("crane").unwrap();
 /// game.guess("carts").unwrap();
 /// game.guess("chair").unwrap();
