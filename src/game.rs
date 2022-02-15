@@ -2,7 +2,7 @@ use std::{fmt, ops::Deref};
 
 use crate::{
     state::{GuessError, State},
-    Matches,
+    Matches, words::WordSet,
 };
 use eyre::{ensure, Result};
 
@@ -25,39 +25,39 @@ impl Deref for Game {
 impl Game {
     /// Create a new game based on the current date (official style)
     #[cfg(feature = "time")]
-    pub fn new() -> Result<Self> {
+    pub fn new(word_set: WordSet<'static>) -> Result<Self> {
         use eyre::WrapErr;
         let now =
             time::OffsetDateTime::now_local().wrap_err("could not determine local timezone")?;
-        Ok(Self::from_date(now.date()))
+        Ok(Self::from_date(now.date(), word_set))
     }
 
     /// Create a new game based on the given word
-    pub fn custom(solution: String) -> Result<Self> {
+    pub fn custom(solution: String, word_set: WordSet<'static>) -> Result<Self> {
         ensure!(
-            crate::words::FINAL.contains(&&*solution),
+            word_set.solutions.contains(&&*solution),
             "{} is not a valid solution",
             solution
         );
-        Ok(Self::new_raw(solution, GameType::Custom))
+        Ok(Self::new_raw(solution, GameType::Custom, word_set))
     }
 
     /// Create a new game based on the given date
     #[cfg(feature = "time")]
-    pub fn from_date(date: time::Date) -> Self {
-        let day = crate::get_day(date);
-        Self::from_day(day)
+    pub fn from_date(date: time::Date, word_set: WordSet<'static>) -> Self {
+        let day = word_set.get_day(date);
+        Self::from_day(day, word_set)
     }
 
     /// Create a new game based on the given day number
-    pub fn from_day(day: usize) -> Self {
-        let solution = crate::get_solution(day).to_owned();
-        Self::new_raw(solution, GameType::Daily(day))
+    pub fn from_day(day: usize, word_set: WordSet<'static>) -> Self {
+        let solution = word_set.get_solution(day).to_owned();
+        Self::new_raw(solution, GameType::Daily(day), word_set)
     }
 
-    fn new_raw(solution: String, game_type: GameType) -> Self {
+    fn new_raw(solution: String, game_type: GameType, word_set: WordSet<'static>) -> Self {
         Self {
-            state: State::new(solution),
+            state: State::new(solution, word_set),
             hard_mode: false,
             game_type,
         }

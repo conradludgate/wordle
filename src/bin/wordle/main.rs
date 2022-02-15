@@ -12,13 +12,20 @@ use rand::Rng;
 
 fn main() -> eyre::Result<()> {
     let app = App::parse();
+
+    let word_set = if app.original {
+        cl_wordle::words::ORIGINAL
+    } else {
+        cl_wordle::words::NYTIMES
+    };
+
     let mut game = match app.game_mode {
-        None => Game::new()?,
-        Some(GameMode::Custom(custom)) => Game::custom(custom.word)?,
-        Some(GameMode::Day(day)) => Game::from_day(day.day),
+        None => Game::new(word_set)?,
+        Some(GameMode::Custom(custom)) => Game::custom(custom.word, word_set)?,
+        Some(GameMode::Day(day)) => Game::from_day(day.day, word_set),
         #[cfg(feature = "rand")]
-        Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen()),
-        Some(GameMode::Date(date)) => Game::from_date(date.date),
+        Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen(), word_set),
+        Some(GameMode::Date(date)) => Game::from_date(date.date, word_set),
     };
 
     if app.hard {

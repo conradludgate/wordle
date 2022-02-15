@@ -5,22 +5,6 @@ pub mod state;
 pub mod game;
 pub mod iter;
 
-/// Gets the solution word for the given day
-pub fn get_solution(day: usize) -> &'static str {
-    words::FINAL[day % words::FINAL.len()]
-}
-
-/// Gets the current day number from the given date
-#[cfg(feature = "time")]
-pub fn get_day(date: time::Date) -> usize {
-    (date.to_julian_day() - words::FIRST_DAY.to_julian_day()) as usize
-}
-
-/// Determines if the given word is valid, according to the default word lists
-pub fn valid(word: &str) -> bool {
-    words::ACCEPT.contains(&word) || words::FINAL.contains(&word)
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 /// Represents a match for a given letter against the solution
 pub enum Match {

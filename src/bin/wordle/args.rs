@@ -18,6 +18,15 @@ pub struct App {
     /// guesses including the all exact matches you have found
     pub hard: bool,
 
+    #[clap(long)]
+    /// Enables Original mode
+    ///
+    /// The NYTimes bought and are now hosting their own
+    /// version of wordle. It's mostly the same
+    /// but features a ever so slightly adapted word list.
+    /// This disables using the new list and instead uses the original
+    pub original: bool,
+
     #[clap(subcommand)]
     pub game_mode: Option<GameMode>,
 }

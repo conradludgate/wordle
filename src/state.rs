@@ -1,8 +1,9 @@
 use std::fmt;
 
-use crate::{iter::StateIter, valid, Match, Matches};
+use crate::{iter::StateIter, words::WordSet, Match, Matches};
 
 pub struct State {
+    word_set: WordSet<'static>,
     solution: String,
     guesses: Vec<String>,
 }
@@ -35,8 +36,9 @@ impl GameOver {
 
 impl State {
     /// Create a new game state from the solution
-    pub fn new(solution: String) -> Self {
+    pub fn new(solution: String, word_set: WordSet<'static>) -> Self {
         Self {
+            word_set,
             solution,
             guesses: Vec::with_capacity(6),
         }
@@ -61,7 +63,7 @@ impl State {
     /// If the guess is an invalid word, or if it doesn't match the
     /// requirements of hard mode, this function will return an error
     pub fn guess(&mut self, word: &str, hard: bool) -> Result<Matches, GuessError> {
-        if valid(word) {
+        if self.word_set.valid(word) {
             if hard {
                 if let Some((last_word, matches)) = self.guesses().last() {
                     for i in 0..5 {
@@ -95,7 +97,9 @@ impl State {
 
     /// Displays the score card for this game state to the given [`fmt::Write`].
     pub fn display_score_card(&self, mut w: impl fmt::Write, hard: bool) -> fmt::Result {
-        let Self { solution, guesses } = self;
+        let Self {
+            solution, guesses, ..
+        } = self;
         let n = guesses.len();
         let score = if n < 6 || &guesses[5] == solution {
             std::char::from_digit(n as u32, 10).ok_or(fmt::Error)?
