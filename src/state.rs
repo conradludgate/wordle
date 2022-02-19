@@ -109,7 +109,7 @@ impl State {
 
         let hard_mode = if hard { "*" } else { "" };
 
-        write!(w, "{score}/6{hard_mode}",)?;
+        write!(w, "{}/6{}",score,hard_mode)?;
         for g in self.guesses() {
             write!(w, "\n{}", g.1)?;
         }
