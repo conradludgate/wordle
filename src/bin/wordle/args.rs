@@ -41,7 +41,7 @@ pub enum GameMode {
     Date(Date),
     #[cfg(feature = "rand")]
     /// Play a random day
-    Random,
+    Random
 }
 
 #[derive(Parser)]

@@ -29,7 +29,7 @@ impl Game {
         use eyre::WrapErr;
         let now =
             time::OffsetDateTime::now_local().wrap_err("could not determine local timezone")?;
-        Ok(Self::from_date(now.date(), word_set))
+        Ok(Self::from_date(now.date(), word_set)?)
     }
 
     /// Create a new game based on the given word
@@ -44,15 +44,15 @@ impl Game {
 
     /// Create a new game based on the given date
     #[cfg(feature = "time")]
-    pub fn from_date(date: time::Date, word_set: WordSet<'static>) -> Self {
+    pub fn from_date(date: time::Date, word_set: WordSet<'static>) -> eyre::Result<Self> {
         let day = word_set.get_day(date);
-        Self::from_day(day, word_set)
+        Ok(Self::from_day(day, word_set)?)
     }
 
     /// Create a new game based on the given day number
-    pub fn from_day(day: usize, word_set: WordSet<'static>) -> Self {
-        let solution = word_set.get_solution(day).to_owned();
-        Self::new_raw(solution, GameType::Daily(day), word_set)
+    pub fn from_day(day: usize, word_set: WordSet<'static>) -> eyre::Result<Self> {
+        let solution = word_set.get_solution(day)?.to_owned();
+        Ok(Self::new_raw(solution, GameType::Daily(day), word_set))
     }
 
     fn new_raw(solution: String, game_type: GameType, word_set: WordSet<'static>) -> Self {

@@ -32,14 +32,18 @@ pub const NYTIMES: WordSet<'static> = WordSet {
 
 impl<'a> WordSet<'a> {
     /// Gets the solution word for the given day
-    pub fn get_solution(self, day: usize) -> &'a str {
-        self.solutions[day % self.solutions.len()]
+    pub fn get_solution(self, day: usize) -> eyre::Result<&'a str> {
+        if day < self.solutions.len() {
+            Ok(self.solutions[day])
+        } else {
+            Err(eyre::eyre!("Day {} is out of range for this word set.",day))
+        }
     }
 
     /// Gets the current day number from the given date
     #[cfg(feature = "time")]
     pub fn get_day(self, date: time::Date) -> usize {
-        (date.to_julian_day() - self.date_offset.to_julian_day()) as usize
+        ((date.to_julian_day() - self.date_offset.to_julian_day()) as usize) % self.solutions.len()
     }
 
     /// Determines if the given word is valid, according to the default word lists
