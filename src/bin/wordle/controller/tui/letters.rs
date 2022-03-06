@@ -1,8 +1,8 @@
-use std::{fmt};
+use std::fmt;
 
 use cl_wordle::Match;
 use owo_colors::{
-    colors::{Black, Green, Yellow, xterm::Gray},
+    colors::{xterm::Gray, Black, Green, Yellow},
     OwoColorize,
 };
 

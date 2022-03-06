@@ -2,7 +2,8 @@ use std::{fmt, ops::Deref};
 
 use crate::{
     state::{GuessError, State},
-    Matches, words::WordSet,
+    words::WordSet,
+    Matches,
 };
 use eyre::{ensure, Result};
 

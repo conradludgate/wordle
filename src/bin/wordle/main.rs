@@ -24,7 +24,10 @@ fn main() -> eyre::Result<()> {
         Some(GameMode::Custom(custom)) => Game::custom(custom.word, word_set)?,
         Some(GameMode::Day(day)) => Game::from_day(day.day % word_set.solutions.len(), word_set),
         #[cfg(feature = "rand")]
-        Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen_range(0..word_set.solutions.len()), word_set),
+        Some(GameMode::Random) => Game::from_day(
+            rand::thread_rng().gen_range(0..word_set.solutions.len()),
+            word_set,
+        ),
         Some(GameMode::Date(date)) => Game::from_date(date.date, word_set),
     };
     if app.hard {

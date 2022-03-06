@@ -235,8 +235,6 @@ pub const FINAL: &[&str] = &[
     "untie", "refit", "aorta", "adult", "judge", "rower", "artsy", "rural", "shave",
 ];
 
-
-
 /// List of words that are acceptable guesses
 pub const ACCEPT: &[&str] = &[
     "aahed", "aalii", "aargh", "aarti", "abaca", "abaci", "abacs", "abaft", "abaka", "abamp",

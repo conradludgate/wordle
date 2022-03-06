@@ -1,9 +1,9 @@
 use std::{fmt::Display, ops::Deref};
 
-pub mod words;
-pub mod state;
 pub mod game;
 pub mod iter;
+pub mod state;
+pub mod words;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 /// Represents a match for a given letter against the solution
