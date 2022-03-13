@@ -49,6 +49,11 @@ impl State {
         &*self.solution
     }
 
+    /// Get the number of maximum possible guesses
+    pub fn max_guesses(&self) -> usize {
+        self.guesses.capacity()
+    }
+
     /// Returns an iterator over the previous guesses
     pub fn guesses(&self) -> StateIter<'_> {
         StateIter {

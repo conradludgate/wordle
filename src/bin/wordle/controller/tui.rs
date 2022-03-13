@@ -142,9 +142,12 @@ impl Controller {
 
         write!(
             self.stdout,
-            "{top_left}Wordle {game_type}{down}{keyboard}{state}{word}",
+            "{top_left}Wordle {game_type} {current_guess}/{total_guesses}{hard_mode}{down}{keyboard}{state}{word}",
             top_left = cursor::MoveTo(0, 0),
             game_type = self.game.game_type(),
+            current_guess = self.game.current_guess(),
+            total_guesses = self.game.max_guess(),
+            hard_mode = self.game.hard_mode_indicator(),
             down = cursor::MoveTo(0, 2),
             keyboard = self.keyboard,
             state = Guesses::from(&*self.game),

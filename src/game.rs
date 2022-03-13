@@ -70,6 +70,25 @@ impl Game {
         self.hard_mode = true;
     }
 
+    /// Get the number of maximum possible guesses
+    pub fn max_guess(&self) -> usize {
+        self.state.max_guesses()
+    }
+
+    /// Get the current attempt for this game
+    pub fn current_guess(&self) -> usize {
+        self.max_guesses().min(self.state.guesses().count() + 1)
+    }
+
+    /// Indicate whether hard mode is active or not
+    pub fn hard_mode_indicator(&self) -> &str {
+        if self.hard_mode {
+            return "*"
+        } else {
+            return ""
+        }
+    }
+
     /// Get the [`GameType`] for this game
     pub fn game_type(&self) -> GameType {
         self.game_type
