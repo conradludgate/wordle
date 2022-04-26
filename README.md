@@ -36,6 +36,14 @@ wordle custom <word>
 cargo install cl-wordle --locked
 ```
 
+To have the application determine your timezone offset, you have to
+enable an unsound feature of the `time` crate. For this application,
+computing the timezone offset is perfectly safe. To enable this:
+
+```sh
+RUSTFLAGS="--cfg unsound_local_offset" cargo install cl-wordle --locked
+```
+
 ## Demo
 
 ![Demo](assets/demo.gif)
