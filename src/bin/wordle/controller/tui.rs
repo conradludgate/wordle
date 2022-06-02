@@ -77,7 +77,17 @@ impl Controller {
                     }
                     (KeyCode::Backspace, _) => {
                         self.word.pop();
-                        write!(self.stdout, "{back} {back}", back = cursor::MoveLeft(1))?;
+                        if self.word.len() == 4 {
+                            write!(
+                                self.stdout,
+                                "{bol}{word} {back}",
+                                back = cursor::MoveLeft(1),
+                                bol = cursor::MoveLeft(5),
+                                word = self.word.to_ascii_uppercase()
+                                )?;
+                        } else {
+                            write!(self.stdout, "{back} {back}", back = cursor::MoveLeft(1))?;
+                        }
                     }
                     _ => {}
                 }
