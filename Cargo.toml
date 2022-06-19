@@ -1,7 +1,7 @@
 [package]
 name = "cl-wordle"
 authors = ["Conrad Ludgate <conradludgate@gmail.com>"]
-version = "0.4.0"
+version = "0.5.0"
 rust-version = "1.58"
 edition = "2021"
 license = "MIT"
