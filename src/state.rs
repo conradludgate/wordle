@@ -101,7 +101,12 @@ impl State {
     }
 
     /// Displays the score card for this game state to the given [`fmt::Write`].
-    pub fn display_score_card(&self, mut w: impl fmt::Write, hard: bool) -> fmt::Result {
+    pub fn display_score_card(
+        &self,
+        mut w: impl fmt::Write,
+        hard: bool,
+        game_time: &String,
+    ) -> fmt::Result {
         let Self {
             solution, guesses, ..
         } = self;
@@ -114,7 +119,7 @@ impl State {
 
         let hard_mode = if hard { "*" } else { "" };
 
-        write!(w, "{score}/6{hard_mode}",)?;
+        write!(w, "{score}/6{hard_mode} {game_time}",)?;
         for g in self.guesses() {
             write!(w, "\n{}", g.1)?;
         }

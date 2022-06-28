@@ -27,6 +27,13 @@ pub struct App {
     /// This disables using the new list and instead uses the original
     pub original: bool,
 
+    #[clap(long)]
+    /// Show stopwatch
+    ///
+    /// Displays the duration of how long the game has been played;
+    /// can be toggled on and off in-game using the '.' key.
+    pub timed: bool,
+
     #[clap(subcommand)]
     pub game_mode: Option<GameMode>,
 }

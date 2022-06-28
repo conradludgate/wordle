@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use std::time::Duration;
 
 use cl_wordle::{
     game::{Game, GameShare},
@@ -29,15 +30,17 @@ pub struct Controller {
     keyboard: Keyboard,
     stdout: Terminal,
     word: String,
+    show_timer: bool,
 }
 
 impl Controller {
-    pub fn new(game: Game) -> Result<Self> {
+    pub fn new(game: Game, timer: bool) -> Result<Self> {
         Ok(Self {
             game,
             keyboard: Keyboard::default(),
             stdout: Terminal::new()?,
             word: String::with_capacity(5),
+            show_timer: timer,
         })
     }
 
@@ -46,6 +49,10 @@ impl Controller {
 
         let game_over = loop {
             self.stdout.flush()?;
+            if self.show_timer && !event::poll(Duration::from_millis(250))? {
+                self.display_window_header()?;
+                continue;
+            }
             if let event::Event::Key(key) = event::read()? {
                 match (key.code, key.modifiers) {
                     (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
@@ -58,6 +65,7 @@ impl Controller {
                             self.display_window()?;
 
                             if let Some(win) = self.game.game_over() {
+                                self.game.play_time = self.game.game_time();
                                 break win;
                             }
                         }
@@ -69,6 +77,10 @@ impl Controller {
                     (KeyCode::Char(','), _) => {
                         self.keyboard.shuffle();
                         self.display_window()?;
+                    }
+                    (KeyCode::Char('.'), _) => {
+                        self.show_timer = !self.show_timer;
+                        self.display_window_header()?;
                     }
                     (KeyCode::Char(c), _) if c.is_ascii_alphabetic() && self.word.len() < 5 => {
                         let c = c.to_ascii_lowercase();
@@ -84,7 +96,7 @@ impl Controller {
                                 back = cursor::MoveLeft(1),
                                 bol = cursor::MoveLeft(5),
                                 word = self.word.to_ascii_uppercase()
-                                )?;
+                            )?;
                         } else {
                             write!(self.stdout, "{back} {back}", back = cursor::MoveLeft(1))?;
                         }
@@ -139,25 +151,38 @@ impl Controller {
         )
     }
 
+    fn display_window_header(&mut self) -> io::Result<()> {
+        let column = self.word.chars().count();
+        let row = 1 + self.game.current_guess();
+        write!(
+            self.stdout,
+            "{top_left}{clear_line}Wordle {game_type} {current_guess}/{total_guesses}{hard_mode} {game_time}{down}",
+            top_left = cursor::MoveTo(0, 0),
+            clear_line = Clear(ClearType::CurrentLine),
+            game_type = self.game.game_type(),
+            current_guess = self.game.current_guess(),
+            total_guesses = self.game.max_guess(),
+            hard_mode = self.game.hard_mode_indicator(),
+            game_time = if self.show_timer { self.game.game_time() } else { String::new() },
+            down = cursor::MoveTo(column.try_into().unwrap(), row.try_into().unwrap())
+        )
+    }
+
     fn display_window(&mut self) -> io::Result<()> {
         let (_width, height) =
             crossterm::terminal::size().map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
         write!(
             self.stdout,
-            "{clear_all}{bottom_left}> Press ESC to exit. Press ',' to shuffle the keyboard.",
+            "{clear_all}{bottom_left}> Press ESC to exit. Press ',' to shuffle the keyboard. Press '.' to toggle timer.",
             clear_all = Clear(ClearType::All),
             bottom_left = cursor::MoveTo(0, height - 1),
         )?;
 
+        self.display_window_header()?;
         write!(
             self.stdout,
-            "{top_left}Wordle {game_type} {current_guess}/{total_guesses}{hard_mode}{down}{keyboard}{state}{word}",
-            top_left = cursor::MoveTo(0, 0),
-            game_type = self.game.game_type(),
-            current_guess = self.game.current_guess(),
-            total_guesses = self.game.max_guess(),
-            hard_mode = self.game.hard_mode_indicator(),
+            "{down}{keyboard}{state}{word}",
             down = cursor::MoveTo(0, 2),
             keyboard = self.keyboard,
             state = Guesses::from(&*self.game),

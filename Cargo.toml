@@ -13,6 +13,7 @@ repository = "https://github.com/conradludgate/wordle"
 [dependencies]
 eyre = { version = "0.6" }
 time = { version = "0.3", features = ["local-offset", "macros", "parsing"], optional = true }
+hhmmss = { version = "0.1", optional = true }
 
 owo-colors = { version = "3.2", optional = true }
 crossterm = { version = "0.23", optional = true }
@@ -24,7 +25,7 @@ test-case = "1.2.2"
 
 [features]
 default = ["tui"]
-tui = ["owo-colors", "crossterm", "rand", "cli"]
+tui = ["owo-colors", "crossterm", "rand", "cli", "hhmmss"]
 cli = ["time", "clap"]
 
 [[bin]]

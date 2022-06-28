@@ -1,8 +1,11 @@
+use std::time::Instant;
 use std::{fmt, ops::Deref};
+use hhmmss::Hhmmss;
 
 use crate::{
     state::{GuessError, State},
-    Matches, words::WordSet,
+    words::WordSet,
+    Matches,
 };
 use eyre::{ensure, Result};
 
@@ -12,6 +15,8 @@ pub struct Game {
     state: State,
     hard_mode: bool,
     game_type: GameType,
+    started: Instant,
+    pub play_time: String,
 }
 
 impl Deref for Game {
@@ -60,6 +65,8 @@ impl Game {
             state: State::new(solution, word_set),
             hard_mode: false,
             game_type,
+            started: Instant::now(),
+            play_time: "(00:00:00)".to_string(),
         }
     }
 
@@ -83,15 +90,20 @@ impl Game {
     /// Indicate whether hard mode is active or not
     pub fn hard_mode_indicator(&self) -> &str {
         if self.hard_mode {
-            return "*"
+            return "*";
         } else {
-            return ""
+            return "";
         }
     }
 
     /// Get the [`GameType`] for this game
     pub fn game_type(&self) -> GameType {
         self.game_type
+    }
+
+    /// Get the elapsed time since starting this game
+    pub fn game_time(&self) -> String {
+        format!("({})", self.started.elapsed().hhmmss())
     }
 
     /// Make a guess.
@@ -115,7 +127,7 @@ impl Game {
     ///
     /// let share = game.share();
     /// let score_card = format!("{}", share);
-    /// assert_eq!(score_card, r"Wordle 0 4/6
+    /// assert_eq!(score_card, r"Wordle 0 4/6 (00:00:00)
     /// 🟩🟨🟨⬛⬛
     /// 🟩🟨🟨⬛⬛
     /// 🟩⬛🟨🟨🟩
@@ -153,7 +165,7 @@ impl fmt::Display for GameType {
 ///
 /// let share = game.share();
 /// let score_card = format!("{}", share);
-/// assert_eq!(score_card, r"Wordle 0 4/6
+/// assert_eq!(score_card, r"Wordle 0 4/6 (00:00:00)
 /// 🟩🟨🟨⬛⬛
 /// 🟩🟨🟨⬛⬛
 /// 🟩⬛🟨🟨🟩
@@ -164,7 +176,8 @@ pub struct GameShare(Game);
 impl fmt::Display for GameShare {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Wordle {game_type} ", game_type = self.0.game_type())?;
-        self.0.display_score_card(f, self.0.hard_mode)?;
+        self.0
+            .display_score_card(f, self.0.hard_mode, &self.0.play_time)?;
         Ok(())
     }
 }

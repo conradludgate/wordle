@@ -36,7 +36,7 @@ fn main() -> eyre::Result<()> {
     let output = if app.no_tui {
         Some(cli::Controller::new(game).run()?)
     } else {
-        controller::tui::Controller::new(game)?.run()?
+        controller::tui::Controller::new(game, app.timed)?.run()?
     };
     #[cfg(not(feature = "tui"))]
     let output = Some(cli::Controller::new(game).run()?);

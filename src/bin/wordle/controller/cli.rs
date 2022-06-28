@@ -26,6 +26,7 @@ impl Controller {
                 Ok(m) => {
                     println!("{}", m);
                     if let Some(win) = self.game.game_over() {
+                        self.game.play_time = self.game.game_time();
                         break win;
                     }
                 }
