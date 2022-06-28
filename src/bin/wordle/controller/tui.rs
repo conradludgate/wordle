@@ -52,7 +52,9 @@ impl Controller {
                         self.word.clear();
                         self.display_window()?;
                     }
-                    (KeyCode::Esc, _) => return Ok(None),
+                    (KeyCode::Esc, _) | (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
+                        return Ok(None);
+                    },
                     (KeyCode::Enter, _) if self.word.len() == 5 => match self.guess() {
                         Ok(()) => {
                             self.display_window()?;
