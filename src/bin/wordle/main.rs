@@ -26,6 +26,7 @@ fn main() -> eyre::Result<()> {
         #[cfg(feature = "rand")]
         Some(GameMode::Random) => Game::from_day(rand::thread_rng().gen(), word_set),
         Some(GameMode::Date(date)) => Game::from_date(date.date, word_set),
+        Some(GameMode::Online) => Game::online(word_set)?
     };
 
     if app.hard {

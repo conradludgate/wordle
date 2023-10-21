@@ -18,6 +18,8 @@ owo-colors = { version = "3.2", optional = true }
 crossterm = { version = "0.23", optional = true }
 clap = { version = "3.0", features = ["derive"], optional = true }
 rand = { version = "0.8", optional = true }
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
 test-case = "1.2.2"
