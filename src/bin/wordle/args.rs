@@ -42,6 +42,8 @@ pub enum GameMode {
     #[cfg(feature = "rand")]
     /// Play a random day
     Random,
+    /// Fetch the current word from the NYTimes website and play with that
+    Online
 }
 
 #[derive(Parser)]

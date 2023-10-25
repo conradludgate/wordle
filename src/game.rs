@@ -3,6 +3,7 @@ use std::{fmt, ops::Deref};
 use crate::{
     state::{GuessError, State},
     Matches, words::WordSet,
+    nyt_api
 };
 use eyre::{ensure, Result};
 
@@ -40,6 +41,12 @@ impl Game {
             solution
         );
         Ok(Self::new_raw(solution, GameType::Custom, word_set))
+    }
+
+    /// Create a new game based on the current word on the NYTimes website
+    pub fn online(word_set: WordSet<'static>) -> Result<Self> {
+        let daily_wordle = nyt_api::get_daily_wordle()?;
+        Ok(Self::new_raw(daily_wordle.solution, GameType::Online(daily_wordle.days_since_launch), word_set))
     }
 
     /// Create a new game based on the given date
@@ -130,6 +137,7 @@ impl Game {
 pub enum GameType {
     Daily(usize),
     Custom,
+    Online(usize),
 }
 
 impl fmt::Display for GameType {
@@ -137,6 +145,7 @@ impl fmt::Display for GameType {
         match self {
             GameType::Daily(day) => write!(f, "{}", day),
             GameType::Custom => write!(f, "custom"),
+            GameType::Online(day) => write!(f, "online {}", day)
         }
     }
 }
